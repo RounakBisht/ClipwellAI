@@ -28,7 +28,7 @@ Kartik owns steps 2–4, Rounak owns steps 1 and 5. Total time: about 30–40 mi
 The repo lives on Rounak's personal GitHub, so Rounak creates the Vercel project from his own Vercel account. Kartik sends him the Supabase URL, anon key, Groq key and Anthropic key privately (WhatsApp, not this chat).
 1. vercel.com → Add New → Project → import the GitHub repo (approve Vercel's access to it). Framework: Next.js (auto-detected).
 2. **Environment Variables**: add every name from `.env.example` with its value.
-3. Deploy. Copy the live domain (e.g. `jhalak-studio.vercel.app`).
+3. Deploy. Copy the live domain (e.g. `clippedai.vercel.app`).
 4. Back in Supabase → **Authentication → URL Configuration**:
    - Site URL: `https://<your-vercel-domain>`
    - Redirect URLs: add `https://<your-vercel-domain>/**`
