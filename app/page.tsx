@@ -236,7 +236,7 @@ function ReelOverlay() {
         <span className="flex flex-col items-center"><IconSend size={19} stroke={2} aria-hidden="true" />Share</span>
         <IconDots size={16} aria-hidden="true" />
       </div>
-      <div className="absolute right-10 bottom-3 left-3 sm:left-8">
+      <div className="absolute right-10 bottom-3 left-8">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-marigold text-[9px] font-bold text-ink">R</span>
           rohan.edits
