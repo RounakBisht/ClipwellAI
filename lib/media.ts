@@ -105,3 +105,84 @@ export async function extractAudioChunks(
 }
 
 export { mountFile, unmount };
+
+let fontReady = false;
+async function ensureFont(f: FFmpeg) {
+  if (fontReady) return;
+  const res = await fetch("/fonts/Baloo2-ExtraBold.ttf");
+  if (!res.ok) throw new Error("Couldn't load the caption font.");
+  try {
+    await f.createDir("/fonts");
+  } catch {
+    /* already there */
+  }
+  await f.writeFile("/fonts/Baloo2-ExtraBold.ttf", new Uint8Array(await res.arrayBuffer()));
+  fontReady = true;
+}
+
+export interface ExportResult {
+  blob: Blob;
+  captioned: boolean;
+  seconds: number;
+}
+
+// Cuts [start, end] from the source, crops the centre to 9:16 at 720×1280 and burns in the captions.
+// If burning captions fails, it retries without them so the user still gets an MP4.
+export async function exportClip(
+  file: File,
+  start: number,
+  end: number,
+  ass: string | null,
+  onProgress?: (fraction: number) => void,
+): Promise<ExportResult> {
+  const t0 = performance.now();
+  const f = await getFFmpeg();
+  const { path, dir } = await mountFile(f, file);
+  const dur = Math.max(0.5, end - start);
+  const onProg = ({ time }: { time: number }) => {
+    const secs = time > dur * 1000 ? time / 1e6 : time; // ffmpeg.wasm reports microseconds
+    if (secs >= 0) onProgress?.(Math.min(0.99, secs / dur));
+  };
+  f.on("progress", onProg);
+  const crop = "crop=min(iw\\,ih*9/16):min(ih\\,iw*16/9),scale=720:1280,setsar=1";
+  const run = async (withCaptions: boolean) => {
+    const vf = withCaptions ? `${crop},ass=subs.ass:fontsdir=/fonts` : crop;
+    return f.exec([
+      "-ss", start.toFixed(2), "-i", path, "-t", dur.toFixed(2),
+      "-vf", vf, "-r", "30",
+      "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
+      "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+      "-y", "out.mp4",
+    ]);
+  };
+  try {
+    let captioned = false;
+    let code = 1;
+    if (ass) {
+      await ensureFont(f);
+      await f.writeFile("subs.ass", new TextEncoder().encode(ass));
+      code = await run(true);
+      captioned = code === 0;
+    }
+    if (code !== 0) code = await run(false);
+    if (code !== 0) throw new Error("The export failed. Try a shorter clip.");
+    const data = (await f.readFile("out.mp4")) as Uint8Array;
+    await f.deleteFile("out.mp4");
+    onProgress?.(1);
+    return { blob: new Blob([data.slice().buffer], { type: "video/mp4" }), captioned, seconds: (performance.now() - t0) / 1000 };
+  } finally {
+    f.off("progress", onProg);
+    await unmount(f, dir);
+  }
+}
+
+export function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}

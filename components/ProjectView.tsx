@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getProject } from "@/lib/store";
 import { recallFile, rememberFile } from "@/lib/media";
+import ClipMaker from "@/components/ClipMaker";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
@@ -11,6 +12,7 @@ export default function ProjectView({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [file, setFile] = useState<File | undefined>(undefined);
   const [now, setNow] = useState(0);
+  const [clipInit, setClipInit] = useState<{ start: number; end: number } | undefined>(undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -29,9 +31,11 @@ export default function ProjectView({ id }: { id: string }) {
 
   function seek(t: number) {
     const v = videoRef.current;
-    if (!v) return;
-    v.currentTime = t;
-    v.play().catch(() => {});
+    if (v) {
+      v.currentTime = t;
+      v.play().catch(() => {});
+    }
+    if (project) setClipInit({ start: t, end: Math.min(t + 30, project.duration_s) });
   }
 
   if (error) return <p className="mx-auto max-w-6xl px-6 py-8 text-red-700">{error}</p>;
@@ -82,10 +86,22 @@ export default function ProjectView({ id }: { id: string }) {
           )}
           <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Brief and clips</h2>
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">Coming in M4</span>
+              <h2 className="text-lg font-semibold">Make a clip</h2>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">AI picks arrive in M4</span>
             </div>
-            <p className="mt-2 text-sm text-stone-600">Speak your brief with Wispr and get 3–5 clips, each with a reason, a 9:16 preview and an MP4 export.</p>
+            <p className="mt-1 mb-5 text-sm text-stone-600">Click a transcript line to start a clip there, preview it in 9:16 and export an MP4 with captions.</p>
+            {file ? (
+              <ClipMaker
+                file={file}
+                url={url}
+                words={project.words}
+                title={project.title}
+                initial={clipInit}
+                getCurrentTime={() => videoRef.current?.currentTime ?? 0}
+              />
+            ) : (
+              <p className="text-sm text-amber-700">Select the video file above to make clips.</p>
+            )}
           </div>
         </div>
 
