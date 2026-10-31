@@ -3,7 +3,14 @@ import SignInButton from "@/components/SignInButton";
 import { APP_NAME, APP_TAGLINE, DEMO_MODE, SUPABASE_READY } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; reason?: string; code?: string; error_description?: string }>;
+}) {
+  const sp = await searchParams;
+  // If Supabase fell back to the Site URL, the code lands here: finish sign-in on the callback route.
+  if (sp.code) redirect(`/auth/callback?code=${encodeURIComponent(sp.code)}`);
   if (!DEMO_MODE && SUPABASE_READY) {
     const supabase = await createClient();
     const {
@@ -11,7 +18,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ e
     } = await supabase.auth.getUser();
     if (user) redirect("/studio");
   }
-  const { error } = await searchParams;
+  const error = sp.error;
+  const reason = sp.reason || sp.error_description;
 
   const steps = [
     { n: "1", title: "Upload a long video", body: "A podcast, workshop or founder talk, up to 45 minutes. It never leaves your laptop." },
@@ -37,7 +45,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ e
         <div className="mt-8 flex justify-center">
           <SignInButton />
         </div>
-        {error && <p className="mt-4 text-sm text-red-600">Sign-in didn&apos;t complete. Please try again.</p>}
+        {error && (
+          <p className="mx-auto mt-4 max-w-xl text-sm text-red-600">
+            Sign-in didn&apos;t complete. Please try again.
+            {reason && <span className="mt-1 block text-xs text-red-500">Reason: {reason}</span>}
+          </p>
+        )}
       </section>
 
       <section className="mx-auto grid max-w-5xl gap-4 px-6 pb-24 sm:grid-cols-3">
