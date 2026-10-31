@@ -108,28 +108,65 @@ function writeKey(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-export async function getBrand(): Promise<Brand | null> {
-  if (LOCAL) return readKey<Brand | null>("clipwell:brand", null);
+// ---------- Style cards: one brand row per named style card; the default is remembered per browser ----------
+const DEFAULT_KEY = "clipwell:defaultBrand";
+function readLocalBrands(): Brand[] {
+  const many = readKey<Brand[] | null>("clipwell:brands", null);
+  if (many) return many;
+  const one = readKey<Brand | null>("clipwell:brand", null);
+  return one ? [one] : [];
+}
+
+export function getDefaultBrandId(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(DEFAULT_KEY);
+}
+export function setDefaultBrandId(id: string) {
+  window.localStorage.setItem(DEFAULT_KEY, id);
+}
+
+export async function listBrands(): Promise<Brand[]> {
+  if (LOCAL) return readLocalBrands();
   const supabase = createClient();
-  const { data, error } = await supabase.from("brands").select("*").order("created_at").limit(1).maybeSingle();
+  const { data, error } = await supabase.from("brands").select("*").order("created_at");
   if (error) throw new Error(error.message);
-  return (data as Brand) || null;
+  return (data || []) as Brand[];
+}
+
+// The default style card's brand (falls back to the first one created).
+export async function getBrand(): Promise<Brand | null> {
+  const all = await listBrands();
+  const id = getDefaultBrandId();
+  return all.find((b) => b.id === id) || all[0] || null;
+}
+
+export async function createBrand(input: { name: string; sells: string; audience: string }): Promise<Brand> {
+  if (LOCAL) {
+    const row: Brand = { ...input, id: crypto.randomUUID(), created_at: new Date().toISOString() };
+    writeKey("clipwell:brands", [...readLocalBrands(), row]);
+    return row;
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase.from("brands").insert(input).select("*").single();
+  if (error) throw new Error(error.message);
+  return data as Brand;
+}
+
+export async function updateBrand(id: string, patch: Partial<Pick<Brand, "name" | "sells" | "audience">>): Promise<Brand> {
+  if (LOCAL) {
+    const rows = readLocalBrands().map((b) => (b.id === id ? { ...b, ...patch } : b));
+    writeKey("clipwell:brands", rows);
+    return rows.find((b) => b.id === id)!;
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase.from("brands").update(patch).eq("id", id).select("*").single();
+  if (error) throw new Error(error.message);
+  return data as Brand;
 }
 
 export async function saveBrand(input: { name: string; sells: string; audience: string }): Promise<Brand> {
   const existing = await getBrand();
-  if (LOCAL) {
-    const row: Brand = existing ? { ...existing, ...input } : { ...input, id: crypto.randomUUID(), created_at: new Date().toISOString() };
-    writeKey("clipwell:brand", row);
-    return row;
-  }
-  const supabase = createClient();
-  const q = existing
-    ? supabase.from("brands").update(input).eq("id", existing.id).select("*").single()
-    : supabase.from("brands").insert(input).select("*").single();
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  return data as Brand;
+  return existing ? updateBrand(existing.id, input) : createBrand(input);
 }
 
 export async function listStyleCards(brandId: string): Promise<StyleCard[]> {

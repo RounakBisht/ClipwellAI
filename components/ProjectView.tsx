@@ -149,6 +149,16 @@ export default function ProjectView({ id }: { id: string }) {
           {fmtTime(project.duration_s)} · {LANGUAGE_LABEL[project.language] || project.language} · {project.words.length.toLocaleString()} words
         </p>
       </div>
+      <Link
+        href={brand ? `/studio?card=${brand.id}#style-cards` : "/studio#style-cards"}
+        className="lift chip-soft mt-3 inline-flex items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-sm"
+        title="Open this style card in the studio"
+      >
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marigold text-xs font-bold text-ink">{(brand?.name || "S").slice(0, 1)}</span>
+        <span className="text-stone-600">Style card</span>
+        <span className="font-semibold text-ink">{brand ? brand.name : "Set one up"}</span>
+        {card && <span className="rounded-full bg-marigold-soft px-2 py-0.5 text-[11px] font-bold text-marigold-deep">Default · v{card.version}</span>}
+      </Link>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">

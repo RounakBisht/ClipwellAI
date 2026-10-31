@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import StudioHeader from "@/components/StudioHeader";
 import NewProject from "@/components/NewProject";
 import ProjectList from "@/components/ProjectList";
-import StyleCardPanel from "@/components/StyleCardPanel";
+import { Suspense } from "react";
+import StyleCardsManager from "@/components/StyleCardsManager";
 
 export default function StudioPage() {
   return (
@@ -15,8 +16,12 @@ export default function StudioPage() {
         </div>
         <div className="space-y-6 lg:col-span-2">
           <ProjectList />
-          <StyleCardPanel />
         </div>
+      </div>
+      <div className="mx-auto max-w-6xl px-6 pb-16">
+        <Suspense fallback={null}>
+          <StyleCardsManager />
+        </Suspense>
       </div>
     </main>
   );

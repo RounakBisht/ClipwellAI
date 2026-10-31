@@ -5,7 +5,7 @@ import { extractAudioChunks, getDuration, getFFmpeg, rememberFile } from "@/lib/
 import { createProject } from "@/lib/store";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
-import { YT_PREFIX, youtubeId } from "@/lib/youtube";
+import { YT_PREFIX, parsePastedTranscript, youtubeId } from "@/lib/youtube";
 import { IconBrandYoutube, IconUpload } from "@tabler/icons-react";
 
 const MAX_MINUTES = 60;
@@ -39,6 +39,8 @@ export default function NewProject() {
   const [mode, setMode] = useState<"youtube" | "file">("youtube");
   const [link, setLink] = useState("");
   const ytId = youtubeId(link);
+  const [pasted, setPasted] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [duration, setDuration] = useState(0);
   const [title, setTitle] = useState("");
@@ -82,6 +84,34 @@ export default function NewProject() {
         words: json.words,
         segments: json.segments,
         source_name: `${YT_PREFIX}${json.id}`,
+        source_size: null,
+      });
+      setProgress(1);
+      router.push(`/studio/p/${project.id}`);
+    } catch (e) {
+      setError((e as Error).message || "Something went wrong.");
+      setShowPaste(true);
+      setBusy(false);
+    }
+  }
+
+  // Fallback when YouTube blocks our server: the transcript copied from YouTube's own "Show transcript" panel.
+  async function startPasted() {
+    if (!ytId) return;
+    const t = parsePastedTranscript(pasted);
+    if (t.segments.length < 3) return setError("Couldn't find timestamps in that text. Copy the whole transcript panel, including the times.");
+    setBusy(true);
+    setError("");
+    setStage("Saving the project");
+    setProgress(0.6);
+    try {
+      const project = await createProject({
+        title: title || "YouTube video",
+        duration_s: Math.round(t.duration),
+        language: lang,
+        words: t.words,
+        segments: t.segments,
+        source_name: `${YT_PREFIX}${ytId}`,
         source_size: null,
       });
       setProgress(1);
@@ -218,6 +248,35 @@ export default function NewProject() {
                   ))}
                 </select>
               </label>
+            </div>
+          )}
+          {ytId && (
+            <div className="mt-4 rounded-[20px] bg-white/60 p-4">
+              <button onClick={() => setShowPaste(!showPaste)} className="text-sm font-semibold text-teal-800 underline underline-offset-2" aria-expanded={showPaste}>
+                {showPaste ? "Hide" : "YouTube blocked? Paste the transcript instead"}
+              </button>
+              {showPaste && (
+                <div className="mt-3">
+                  <p className="text-sm text-stone-700">
+                    On YouTube, open the video description, click <b>Show transcript</b>, select all the text in the transcript panel (with the times), copy it and paste it here.
+                  </p>
+                  <textarea
+                    rows={5}
+                    value={pasted}
+                    onChange={(e) => setPasted(e.target.value)}
+                    disabled={busy}
+                    placeholder={"0:00\nSo today we're talking about…\n0:04\n…"}
+                    className="field mt-2 w-full px-3.5 py-2.5 font-mono text-xs"
+                  />
+                  <button
+                    onClick={startPasted}
+                    disabled={busy || !pasted.trim()}
+                    className="btn-press mt-3 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+                  >
+                    Use this transcript
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

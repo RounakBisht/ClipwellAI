@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import SignInButton from "@/components/SignInButton";
 import Logo, { LogoMark } from "@/components/Logo";
 import { APP_NAME, DEMO_MODE, PRODUCT_SPACE_URL, SUPABASE_READY, WISPR_URL } from "@/lib/config";
-import { IconBrandYoutube, IconCalendarEvent, IconCut, IconLock, IconMicrophone, IconSparkles, IconTypography, IconWand } from "@tabler/icons-react";
+import { IconBrandYoutube, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography, IconWand } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
@@ -119,7 +119,7 @@ export default async function Home({
       </section>
 
       <section id="how" className="mx-auto max-w-5xl scroll-mt-10 px-6 pt-24 pb-20 text-center">
-        <h2 className="reveal text-4xl font-bold text-ink sm:text-5xl">Teen steps. That&apos;s it.</h2>
+        <h2 className="reveal text-4xl font-bold text-ink sm:text-5xl">3 steps. That&apos;s it.</h2>
         <ol className="relative mt-14 grid gap-12 md:grid-cols-3 md:gap-8">
           <span className="absolute top-8 right-[16%] left-[16%] hidden border-t-2 border-dashed border-teal-700/25 md:block" aria-hidden="true" />
           {steps.map((s, i) => (
@@ -175,7 +175,7 @@ function HeroClips() {
   const clips = [
     { src: "/hero/clip-a", tag: "Hook in 2 sec", r: "-7deg", y: "28px", z: 1 },
     { src: "/hero/clip-b", tag: "Score 92", r: "0deg", y: "0px", z: 2 },
-    { src: "/hero/clip-c", tag: "On-brand copy", r: "7deg", y: "28px", z: 1 },
+    { src: "/hero/clip-c", tag: "On-brand copy", r: "7deg", y: "28px", z: 1, post: true },
   ];
   return (
     <div className="relative mx-auto mt-14 flex max-w-3xl items-start justify-center" aria-label="Example clips made with ClipwellAI">
@@ -199,6 +199,7 @@ function HeroClips() {
                 preload="metadata"
               />
               <span className="absolute top-3 left-1/2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-black/60" aria-hidden="true" />
+              {"post" in c && <ReelOverlay />}
             </div>
             <span className="chip-soft absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap text-teal-800">
               {c.tag}
@@ -206,6 +207,32 @@ function HeroClips() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Example of how the clip looks once posted: Reels-style action rail and the caption ClipwellAI wrote.
+function ReelOverlay() {
+  return (
+    <div className="pointer-events-none absolute inset-[5px] overflow-hidden rounded-[25px] text-left text-white">
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+      <div className="absolute right-2 bottom-[22%] flex flex-col items-center gap-2.5 text-[10px] font-semibold [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
+        <span className="flex flex-col items-center"><IconHeartFilled size={20} className="text-[#ff3b5c]" aria-hidden="true" />14.3K</span>
+        <span className="flex flex-col items-center"><IconMessageCircle size={20} stroke={2} aria-hidden="true" />729</span>
+        <span className="flex flex-col items-center"><IconSend size={19} stroke={2} aria-hidden="true" />Share</span>
+        <IconDots size={16} aria-hidden="true" />
+      </div>
+      <div className="absolute right-10 bottom-3 left-8">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-marigold text-[9px] font-bold text-ink">R</span>
+          rohan.edits
+          <span className="rounded-md border border-white/70 px-1.5 text-[9px]">Follow</span>
+        </p>
+        <p className="mt-1 text-[10px] leading-snug">
+          18 mahine cargo ship pe, aur jo dekha woh koi explain nahi kar paaya. Full story Prakhar Gupta podcast pe…
+        </p>
+        <p className="mt-0.5 text-[10px] font-semibold text-sky-200">#podcastclips #merchantnavy</p>
+      </div>
     </div>
   );
 }
