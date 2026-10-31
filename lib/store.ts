@@ -54,20 +54,23 @@ export async function createProject(input: NewProject): Promise<Project> {
     return row;
   }
   const supabase = createClient();
-  const { data, error } = await supabase
+  const base = {
+    title: input.title,
+    duration_s: input.duration_s,
+    language: input.language,
+    words: input.words,
+    segments: input.segments,
+    brief: input.brief ?? null,
+  };
+  let { data, error } = await supabase
     .from("projects")
-    .insert({
-      title: input.title,
-      duration_s: input.duration_s,
-      language: input.language,
-      words: input.words,
-      segments: input.segments,
-      brief: input.brief ?? null,
-      source_name: input.source_name ?? null,
-      source_size: input.source_size ?? null,
-    })
+    .insert({ ...base, source_name: input.source_name ?? null, source_size: input.source_size ?? null })
     .select("*")
     .single();
+  // If the database hasn't got the newer columns yet, save without them rather than lose the transcript.
+  if (error && /source_(name|size)|schema cache/i.test(error.message)) {
+    ({ data, error } = await supabase.from("projects").insert(base).select("*").single());
+  }
   if (error) throw new Error(error.message);
   return data as Project;
 }
