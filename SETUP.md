@@ -3,9 +3,9 @@
 Kartik owns steps 2–4, Rounak owns steps 1 and 5. Total time: about 30–40 minutes. Never paste keys into the chat; they go only into Supabase and Vercel.
 
 ## 1. GitHub (Rounak, 5 min)
-1. Rounak creates a new **empty** repository on his **personal** GitHub (no README, no .gitignore), e.g. `clippedai`. Public is easier for judges to open.
+1. Rounak creates a new **empty** repository on his **personal** GitHub (no README, no .gitignore), e.g. `clipwellai`. Public is easier for judges to open.
 2. Repo → Settings → Collaborators → Add people → Kartik's GitHub username. Kartik accepts the email invite.
-3. Rounak connects the repo to Claude and pastes `username/clippedai` into the chat. Claude pushes the code to it.
+3. Rounak connects the repo to Claude and pastes `username/clipwellai` into the chat. Claude pushes the code to it.
 
 ## 2. Supabase (10 min)
 1. supabase.com → New project → Region: **Mumbai (ap-south-1)** → set a database password → Create.
@@ -28,7 +28,7 @@ Kartik owns steps 2–4, Rounak owns steps 1 and 5. Total time: about 30–40 mi
 The repo lives on Rounak's personal GitHub, so Rounak creates the Vercel project from his own Vercel account. Kartik sends him the Supabase URL, anon key, Groq key and Anthropic key privately (WhatsApp, not this chat).
 1. vercel.com → Add New → Project → import the GitHub repo (approve Vercel's access to it). Framework: Next.js (auto-detected).
 2. **Environment Variables**: add every name from `.env.example` with its value.
-3. Deploy. Copy the live domain (e.g. `clippedai.vercel.app`).
+3. Deploy. Copy the live domain (e.g. `clipwellai.vercel.app`).
 4. Back in Supabase → **Authentication → URL Configuration**:
    - Site URL: `https://<your-vercel-domain>`
    - Redirect URLs: add `https://<your-vercel-domain>/**`

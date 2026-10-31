@@ -1,4 +1,4 @@
-# ClippedAI Studio
+# ClipwellAI Studio
 
 A mini editing studio for D2C brand teams: upload a long video, speak a brief, get on-brand YouTube Shorts and Instagram Reels with captions burned in, and a style card that learns from every edit.
 
