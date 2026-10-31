@@ -16,10 +16,11 @@ export default async function StudioHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-sand bg-cream/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/studio" aria-label="Studio home">
+        <Link href="/" aria-label="ClipwellAI home">
           <Logo size={28} suffix="Studio" />
         </Link>
         <div className="flex items-center gap-4 text-sm text-stone-600">
+          <Link href="/studio" className="font-medium text-teal-800 hover:text-teal-900">Projects</Link>
           {demo ? (
             <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">Demo mode · data stays in this browser</span>
           ) : (

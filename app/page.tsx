@@ -12,12 +12,13 @@ export default async function Home({
   const sp = await searchParams;
   // If Supabase fell back to the Site URL, the code lands here: finish sign-in on the callback route.
   if (sp.code) redirect(`/auth/callback?code=${encodeURIComponent(sp.code)}`);
+  let signedIn = false;
   if (!DEMO_MODE && SUPABASE_READY) {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) redirect("/studio");
+    signedIn = Boolean(user);
   }
   const error = sp.error;
   const reason = sp.reason || sp.error_description;
@@ -56,7 +57,16 @@ export default async function Home({
             Clipping tools treat every brand the same. {APP_NAME} turns your podcasts into Shorts and Reels, and learns how your brand talks, ek edit at a time.
           </p>
           <div className="animate-rise mt-8 flex flex-wrap items-center gap-4" style={{ animationDelay: "240ms" }}>
-            <SignInButton />
+            {signedIn ? (
+              <a
+                href="/studio"
+                className="btn-press inline-flex items-center gap-2 rounded-xl bg-teal-700 px-6 py-3.5 font-semibold text-white shadow-[0_10px_24px_-12px_rgba(15,118,110,.8)] hover:bg-teal-800"
+              >
+                Open your studio
+              </a>
+            ) : (
+              <SignInButton />
+            )}
             <a href="#how" className="btn-press rounded-xl px-4 py-3 font-medium text-teal-800 hover:bg-teal-50">
               See how it works
             </a>

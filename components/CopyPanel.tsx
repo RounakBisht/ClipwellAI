@@ -61,6 +61,12 @@ export default function CopyPanel({
   const shown = list.find((v) => v.version === viewing[platform]) || latest;
   const text = useMemo(() => clipWords(project.words, clip.start_s, clip.end_s).map((w) => w[0]).join(" "), [project.words, clip]);
 
+  function friendly(e: unknown): string {
+    const m = (e as Error).message || "Something went wrong";
+    if (m.includes("copy_versions_clip_id_fkey")) return "This clip was replaced when you clicked \u201cFind clips again\u201d. Open a clip from the list above and try again.";
+    return m;
+  }
+
   function flash(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 4500);
@@ -84,7 +90,7 @@ export default function CopyPanel({
       setVersions((v) => [...v, ...made]);
       setViewing({ shorts: null, reels: null });
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendly(e));
     } finally {
       setBusy("");
     }
@@ -118,7 +124,7 @@ export default function CopyPanel({
       }
       setEdit("");
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendly(e));
     } finally {
       setBusy("");
     }
@@ -127,9 +133,13 @@ export default function CopyPanel({
   async function undo() {
     if (!latest || list.length < 2) return;
     const prev = list[list.length - 2];
-    const v = await addCopyVersion({ clip_id: clip.id, platform, content: prev.content, language: prev.language, instruction: `Undo to v${prev.version}`, made_rule: false });
-    setVersions((all) => [...all, v]);
-    setViewing((s) => ({ ...s, [platform]: null }));
+    try {
+      const v = await addCopyVersion({ clip_id: clip.id, platform, content: prev.content, language: prev.language, instruction: `Undo to v${prev.version}`, made_rule: false });
+      setVersions((all) => [...all, v]);
+      setViewing((s) => ({ ...s, [platform]: null }));
+    } catch (e) {
+      setError(friendly(e));
+    }
   }
 
   function asText(v: CopyVersion): string {

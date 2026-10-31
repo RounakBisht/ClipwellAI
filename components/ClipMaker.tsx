@@ -35,6 +35,7 @@ export default function ClipMaker({
   const [endText, setEndText] = useState(fmtTime(initial?.end ?? 30));
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [startedAt, setStartedAt] = useState(0);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [framing, setFraming] = useState<Framing>("center");
@@ -57,6 +58,7 @@ export default function ClipMaker({
     setError("");
     setNote("");
     setProgress(0.01);
+    setStartedAt(Date.now());
     try {
       const rel = clipWords(words, start, end);
       const result = await exportClip(file, start, end, buildAss(rel, effStyle), setProgress, framing);
@@ -136,7 +138,10 @@ export default function ClipMaker({
             <div className="h-2 overflow-hidden rounded-full bg-stone-100">
               <div className="h-full bg-teal-700 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
-            <p className="mt-2 text-sm text-stone-600">Rendering 9:16 MP4 with captions… {Math.round(progress * 100)}%</p>
+            <p className="mt-2 text-sm text-stone-600" aria-live="polite">
+              Rendering 9:16 MP4 with captions… {Math.round(progress * 100)}%
+              {progress > 0.08 && startedAt > 0 && ` · about ${Math.max(1, Math.round(((Date.now() - startedAt) / 1000) * (1 - progress) / progress))} s left`}
+            </p>
           </div>
         )}
         {note && <p className="mt-3 text-sm text-emerald-700">{note}</p>}
@@ -149,7 +154,7 @@ export default function ClipMaker({
         >
           {busy ? "Exporting…" : "Export MP4 (9:16, captions burned in)"}
         </button>
-        <p className="mt-2 text-xs text-stone-500">Rendering happens in your browser. Keep this tab open until the download starts.</p>
+        <p className="mt-2 text-xs text-stone-500">Rendering happens in your browser, so a 30 s clip takes roughly 30–60 s. Keep this tab open until the download starts.</p>
       </div>
     </div>
   );

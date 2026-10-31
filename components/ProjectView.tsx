@@ -43,6 +43,15 @@ export default function ProjectView({ id }: { id: string }) {
     makerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // "Find clips again" replaces the clip rows. Keep the open clip only if it still exists (same range), else close it,
+  // so copy is never saved against a deleted clip.
+  function syncClips(list: Clip[]) {
+    setActiveClip((a) => {
+      if (!a) return a;
+      return list.find((c) => c.id === a.id) || list.find((c) => Math.abs(c.start_s - a.start_s) < 0.5 && Math.abs(c.end_s - a.end_s) < 0.5) || null;
+    });
+  }
+
   const url = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
 
@@ -108,7 +117,7 @@ export default function ProjectView({ id }: { id: string }) {
             </p>
           )}
           <div className="mt-6">
-            <BriefAndClips project={project} url={url} brand={brand} card={card} captionStyle={captionStyle} onOpen={openClip} />
+            <BriefAndClips project={project} url={url} brand={brand} card={card} captionStyle={captionStyle} onOpen={openClip} onClips={syncClips} />
           </div>
           <div ref={makerRef} className="mt-6 scroll-mt-24 rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
             <div className="flex items-center justify-between gap-3">
@@ -133,6 +142,7 @@ export default function ProjectView({ id }: { id: string }) {
             )}
             {activeClip ? (
               <CopyPanel
+                key={activeClip.id}
                 clip={activeClip}
                 project={project}
                 brand={brand}
