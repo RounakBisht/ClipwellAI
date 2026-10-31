@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import HeroVideo from "@/components/HeroVideo";
 import SignInButton from "@/components/SignInButton";
 import Logo, { LogoMark } from "@/components/Logo";
 import { APP_NAME, DEMO_MODE, PRODUCT_SPACE_URL, SUPABASE_READY, WISPR_URL } from "@/lib/config";
-import { IconTrophy, IconBrandYoutube, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography, IconWand } from "@tabler/icons-react";
+import { IconTrophy, IconBrandYoutube, IconBrandLinkedin, IconChartArrowsVertical, IconBrain, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
@@ -25,16 +28,20 @@ export default async function Home({
   const reason = sp.reason || sp.error_description;
 
   const steps = [
-    { icon: IconBrandYoutube, kicker: "Upload karo", title: "Paste a link or drop a video", body: "A YouTube podcast, workshop or founder talk, up to 45 minutes." },
+    { icon: IconBrandYoutube, kicker: "Upload karo", title: "Paste a link or drop a video", body: "A YouTube podcast, workshop or founder talk, however long it runs." },
     { icon: IconMicrophone, kicker: "Bolo, brief do", title: "Speak your brief", body: "Tell it what you want with Wispr. Get clips with a reason for each pick." },
     { icon: IconCut, kicker: "Export & post", title: "Captioned 9:16 MP4s", body: "Shorts and Reels with burned-in captions and copy in your brand's voice." },
   ];
+  // The six things a repurposing studio with brand memory has to do
   const features = [
-    { icon: IconSparkles, label: "AI clip picks with reasons" },
-    { icon: IconTypography, label: "Word-by-word captions" },
-    { icon: IconWand, label: "Copy that learns your edits" },
+    { icon: IconBrandYoutube, label: "Long videos and podcasts in" },
+    { icon: IconSparkles, label: "Clip picks, each with a reason" },
+    { icon: IconTypography, label: "Captions and copy per platform" },
+    { icon: IconBrain, label: "Brand voice that learns your edits" },
     { icon: IconCalendarEvent, label: "Content calendar" },
+    { icon: IconChartArrowsVertical, label: "Learns from what performed" },
   ];
+  const demoVideo = existsSync(join(process.cwd(), "public", "demo", "demo.mp4"));
 
   return (
     <main className="min-h-[100dvh] overflow-x-hidden">
@@ -55,7 +62,7 @@ export default async function Home({
       <section className="mx-auto max-w-6xl px-6 pt-10 text-center">
         <p className="animate-rise inline-flex items-center gap-2 rounded-full bg-marigold-soft px-3.5 py-1 text-sm font-semibold text-marigold-deep">
           <span className="pulse-ring h-2 w-2 rounded-full bg-marigold" aria-hidden="true" />
-          Clip karo, post karo
+          Content repurposing studio with brand memory
         </p>
         <h1 className="animate-rise mx-auto mt-6 max-w-4xl text-5xl leading-[1.04] font-bold text-ink sm:text-7xl" style={{ animationDelay: "80ms" }}>
           Long videos in.{" "}
@@ -66,7 +73,7 @@ export default async function Home({
           Reels out.
         </h1>
         <p className="animate-rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-stone-700 sm:text-xl" style={{ animationDelay: "160ms" }}>
-          Paste a YouTube link or drop a podcast. {APP_NAME} cuts Shorts and Reels, and learns how your brand talks, ek edit at a time.
+          Paste a YouTube link / Podcast or drop a Long Video. {APP_NAME} picks the moments worth posting, tells you why, and learns your brand voice from every edit and every result.
         </p>
         <div className="animate-rise mt-9 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "240ms" }}>
           {signedIn ? (
@@ -79,7 +86,7 @@ export default async function Home({
           ) : (
             <SignInButton />
           )}
-          <a href="#how" className="btn-press rounded-full px-5 py-3.5 font-medium text-teal-800 hover:bg-white/60">
+          <a href="#how" className="btn-press rounded-full bg-teal-700/12 px-6 py-3.5 font-semibold text-teal-800 shadow-[inset_0_0_0_1px_rgba(15,118,110,.18)] hover:bg-teal-700/20">
             See how it works
           </a>
         </div>
@@ -105,9 +112,9 @@ export default async function Home({
       </section>
 
       <section className="mx-auto mt-16 max-w-4xl px-6">
-        <ul className="reveal flex flex-wrap items-center justify-center gap-3">
+        <ul className="reveal grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <li key={f.label} className="chip-soft inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink">
+            <li key={f.label} className="chip-soft inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-ink">
               <f.icon size={17} stroke={1.8} className="text-teal-700" aria-hidden="true" />
               {f.label}
             </li>
@@ -132,6 +139,17 @@ export default async function Home({
             </li>
           ))}
         </ol>
+        <div className="reveal surface mx-auto mt-16 flex aspect-[4/3] max-w-3xl items-center justify-center overflow-hidden p-2 sm:aspect-[16/10]">
+          {demoVideo ? (
+            <HeroVideo src="/demo/demo.mp4" poster="/hero/clip-b.jpg" className="h-full w-full rounded-[22px] object-cover" />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center rounded-[22px] bg-gradient-to-br from-teal-800/90 to-ink text-center text-teal-50">
+              <IconBrandYoutube size={40} stroke={1.5} className="text-marigold" aria-hidden="true" />
+              <p className="mt-3 text-lg font-semibold">Watch the 2-minute walkthrough</p>
+              <p className="text-sm text-teal-100/80">Demo video coming up</p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
@@ -150,7 +168,15 @@ export default async function Home({
 
       <footer className="px-6 pb-10 text-center text-sm text-stone-600">
         <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-          <LogoMark size={18} /> Made by Rounak &amp; Kartik ·
+          <LogoMark size={18} /> Made by{" "}
+          <a href="https://www.linkedin.com/in/rounak-bisht-/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-teal-800 underline underline-offset-2">
+            <IconBrandLinkedin size={15} aria-hidden="true" />Rounak
+          </a>{" "}
+          &amp;{" "}
+          <a href="https://www.linkedin.com/in/kartik-manral-b08383249/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-teal-800 underline underline-offset-2">
+            <IconBrandLinkedin size={15} aria-hidden="true" />Kartik
+          </a>{" "}
+          ·
           <span>
             Built at{" "}
             <a href={PRODUCT_SPACE_URL} target="_blank" rel="noreferrer" className="font-semibold text-teal-800 underline underline-offset-2">
@@ -175,26 +201,17 @@ function HeroClips() {
     { src: "/hero/clip-c", tag: "On-brand copy", r: "7deg", y: "28px", z: 1, post: true },
   ];
   return (
-    <div className="relative mx-auto mt-14 flex max-w-3xl items-start justify-center" aria-label="Example clips made with ClipwellAI">
-      <span className="pointer-events-none absolute top-1/2 left-1/2 h-72 w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-600/20 blur-3xl" aria-hidden="true" />
+    <div className="hero-row relative mx-auto mt-14 flex max-w-3xl items-start justify-center" aria-label="Example clips made with ClipwellAI">
+      <span className="pointer-events-none absolute top-1/2 left-1/2 hidden h-72 w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-600/20 blur-3xl sm:block" aria-hidden="true" />
       {clips.map((c, i) => (
         <div
           key={c.src}
-          className="animate-rise group relative -mx-3 w-[31%] max-w-[230px] sm:-mx-2"
+          className="hero-phone animate-rise group relative -mx-3 w-[31%] max-w-[230px] sm:-mx-2"
           style={{ animationDelay: `${300 + i * 120}ms`, zIndex: c.z, marginTop: c.y }}
         >
           <div className="animate-float" style={{ ["--r" as string]: c.r, animationDelay: `${i * 0.7}s` } as React.CSSProperties}>
             <div className="relative aspect-[9/16] overflow-hidden rounded-[30px] bg-ink p-[5px] shadow-[0_34px_60px_-28px_rgba(11,47,46,.75)] transition duration-500 group-hover:scale-[1.04]">
-              <video
-                className="h-full w-full rounded-[25px] object-cover"
-                src={`${c.src}.mp4`}
-                poster={`${c.src}.jpg`}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-              />
+              <HeroVideo className="h-full w-full rounded-[25px] object-cover" src={`${c.src}.mp4`} poster={`${c.src}.jpg`} />
               <span className="absolute top-3 left-1/2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-black/60" aria-hidden="true" />
               {"post" in c && <ReelOverlay />}
             </div>
@@ -219,7 +236,7 @@ function ReelOverlay() {
         <span className="flex flex-col items-center"><IconSend size={19} stroke={2} aria-hidden="true" />Share</span>
         <IconDots size={16} aria-hidden="true" />
       </div>
-      <div className="absolute right-10 bottom-3 left-8">
+      <div className="absolute right-10 bottom-3 left-3 sm:left-8">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-marigold text-[9px] font-bold text-ink">R</span>
           rohan.edits

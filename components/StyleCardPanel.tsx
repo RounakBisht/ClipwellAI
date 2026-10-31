@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { addStyleCard, getBrand, getDefaultBrandId, listBrands, listStyleCards, saveBrand } from "@/lib/store";
+import { addStyleCard, getBrand, getDefaultBrandId, listBrands, listStyleCards, saveBrand, setDefaultBrandId } from "@/lib/store";
 import { DEFAULT_CAPTION_STYLE } from "@/lib/captions";
 import { LANGUAGE_LABEL } from "@/lib/format";
 import type { Brand, CopyLanguage, Rule, StyleCard } from "@/lib/types";
@@ -19,11 +18,13 @@ export default function StyleCardPanel({
   refreshKey = 0,
   brandId = null,
   onSwitch,
+  onManage,
 }: {
   compact?: boolean;
   refreshKey?: number;
   brandId?: string | null;
   onSwitch?: (brandId: string) => void;
+  onManage?: (opts: { open?: string; create?: boolean }) => void;
 }) {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [all, setAll] = useState<Brand[]>([]);
@@ -52,6 +53,7 @@ export default function StyleCardPanel({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Couldn't build the style card (${res.status}).`);
       const b = await saveBrand({ name: form.name.trim(), sells: form.sells.trim(), audience: form.audience.trim() });
+      if (!getDefaultBrandId()) setDefaultBrandId(b.id);
       const card = await addStyleCard(
         b.id,
         {
@@ -145,12 +147,12 @@ export default function StyleCardPanel({
             {all.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
-                {b.id === getDefaultBrandId() ? " (default)" : ""}
+                {b.id === (getDefaultBrandId() || all[0]?.id) ? " (default)" : ""}
               </option>
             ))}
           </select>
-          <Link href={`/studio?card=${brand.id}#style-cards`} className="rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800">Edit</Link>
-          <Link href="/studio#style-cards" className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-ink/10">+ New</Link>
+          <button onClick={() => onManage?.({ open: brand.id })} className="rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800">Edit</button>
+          <button onClick={() => onManage?.({ create: true })} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-ink/10">+ New</button>
         </div>
       ) : (
         <p className="mt-0.5 text-xs text-stone-500">{brand?.name}</p>

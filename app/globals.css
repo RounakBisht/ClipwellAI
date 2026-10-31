@@ -28,15 +28,22 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100dvh;
-  /* Warm marigold dawn top-left, teal dusk bottom-right */
+  background: #fbf6ee;
+  -webkit-font-smoothing: antialiased;
+}
+/* Warm marigold dawn top-left, teal dusk bottom-right. A fixed layer scrolls for free (no repaint). */
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
   background:
     radial-gradient(1100px 620px at -8% -12%, rgba(246, 162, 30, 0.34), transparent 62%),
     radial-gradient(900px 560px at 108% 6%, rgba(15, 118, 110, 0.22), transparent 60%),
     radial-gradient(1000px 700px at 85% 112%, rgba(15, 118, 110, 0.26), transparent 62%),
     radial-gradient(800px 500px at 0% 100%, rgba(246, 162, 30, 0.14), transparent 60%),
     linear-gradient(180deg, #fff3df 0%, #fbf6ee 48%, #ecf5f1 100%);
-  background-attachment: fixed;
-  -webkit-font-smoothing: antialiased;
 }
 /* Tiny editing + camera icons as a quiet backdrop */
 body::before {
@@ -44,6 +51,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
+  transform: translateZ(0);
   pointer-events: none;
   background-image: url("/pattern.svg");
   background-size: 360px 360px;
@@ -86,6 +94,9 @@ h1, h2, h3, .font-display {
 .seg { border-radius: 999px; background: rgba(23, 38, 42, 0.06); padding: 4px; }
 .seg-on { background: #fff; box-shadow: 0 2px 8px -3px rgba(16, 60, 56, 0.35); }
 
+@media (max-width: 640px) {
+  .surface { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(255, 255, 255, 0.9); }
+}
 @media (prefers-reduced-transparency: reduce) {
   .surface { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -134,3 +145,11 @@ h1, h2, h3, .font-display {
 
 /* Placeholder text meets AA contrast on white inputs. */
 input::placeholder, textarea::placeholder { color: #78716c; opacity: 1; }
+
+/* Hero phones: fanned on desktop, a swipeable row on phones */
+@media (max-width: 639px) {
+  .hero-row { overflow-x: auto; scroll-snap-type: x mandatory; justify-content: flex-start !important; padding: 8px 12vw 28px; gap: 16px; scrollbar-width: none; }
+  .hero-row::-webkit-scrollbar { display: none; }
+  .hero-phone { flex: 0 0 72vw; max-width: 300px !important; width: 72vw !important; margin: 0 !important; scroll-snap-align: center; }
+  .hero-phone .animate-float { animation: none; --r: 0deg !important; transform: none; }
+}

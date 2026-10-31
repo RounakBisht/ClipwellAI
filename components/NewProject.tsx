@@ -8,11 +8,12 @@ import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
 import { YT_PREFIX, parsePastedTranscript, youtubeId } from "@/lib/youtube";
 import { IconBrandYoutube, IconDownload, IconUpload } from "@tabler/icons-react";
 
-const MAX_MINUTES = 60;
+const MAX_MINUTES = 240; // 4-hour podcasts are fine; audio is split into 5-minute parts
 
 async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLanguage, part: string) {
   let lastError = "";
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  let rateWaits = 0;
+  for (let attempt = 1; attempt <= 3 + rateWaits; attempt++) {
     const fd = new FormData();
     fd.append("file", blob, "chunk.mp3");
     fd.append("offset", String(offset));
@@ -28,6 +29,12 @@ async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLangu
     const json = await res.json().catch(() => ({}));
     if (res.ok) return json as { words: Word[]; segments: Segment[]; language: string | null };
     lastError = `${json.error || "Transcription failed"} (part ${part}, HTTP ${res.status})${json.detail ? `: ${String(json.detail).slice(0, 200)}` : ""}`;
+    // Long podcasts can hit the transcription provider's hourly limit: wait and resume instead of failing.
+    if (/rate.?limit|429|too many/i.test(`${json.error} ${json.detail}`) && rateWaits < 12) {
+      rateWaits++;
+      await new Promise((r) => setTimeout(r, 20000));
+      continue;
+    }
     if (res.status !== 429 && res.status < 500) break;
     await new Promise((r) => setTimeout(r, 1500 * attempt));
   }
@@ -190,7 +197,7 @@ export default function NewProject() {
     <div className="surface p-6">
       <h2 className="text-lg font-semibold">New project</h2>
       <p className="mt-1 text-sm text-stone-600">
-        Paste a YouTube link, or upload a podcast (MP4, up to 45 min). Uploads stay on your laptop; only the audio is sent for transcription.
+        Paste a YouTube link, or upload a podcast or long video of any length. Uploads stay on your laptop; only the audio is sent for transcription.
       </p>
 
       <div role="tablist" aria-label="Source" className="seg mt-5 inline-flex">

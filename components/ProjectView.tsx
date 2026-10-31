@@ -8,10 +8,11 @@ import BriefAndClips from "@/components/BriefAndClips";
 import CopyPanel from "@/components/CopyPanel";
 import StyleCardPanel, { loadStyle } from "@/components/StyleCardPanel";
 import ContentCalendar from "@/components/ContentCalendar";
+import StyleCardsManager from "@/components/StyleCardsManager";
 import SuggestionsPanel from "@/components/SuggestionsPanel";
 import { DEFAULT_CAPTION_STYLE, buildSrt, clipWords } from "@/lib/captions";
 import { projectYoutubeId } from "@/lib/youtube";
-import { IconBrandYoutube, IconDownload, IconPlayerPlay } from "@tabler/icons-react";
+import { IconBrandYoutube, IconDownload, IconPlayerPlay, IconX } from "@tabler/icons-react";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Brand, Clip, PlanSlot, Project, StyleCard } from "@/lib/types";
 
@@ -26,6 +27,7 @@ export default function ProjectView({ id }: { id: string }) {
   const [activeClip, setActiveClip] = useState<Clip | null>(null);
   const [styleKey, setStyleKey] = useState(0);
   const [brandId, setBrandId] = useState<string | null>(null);
+  const [manage, setManage] = useState<{ open?: string; create?: boolean } | null>(null);
   const [clips, setClips] = useState<Clip[]>([]);
   const [slots, setSlots] = useState<PlanSlot[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -162,10 +164,10 @@ export default function ProjectView({ id }: { id: string }) {
           {fmtTime(project.duration_s)} · {LANGUAGE_LABEL[project.language] || project.language} · {project.words.length.toLocaleString()} words
         </p>
       </div>
-      <Link
-        href={brand ? `/studio?card=${brand.id}#style-cards` : "/studio#style-cards"}
+      <button
+        onClick={() => setManage(brand ? { open: brand.id } : { create: true })}
         className="lift chip-soft mt-3 inline-flex items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-sm"
-        title="Open this style card in the studio"
+        title="Open this style card"
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marigold text-xs font-bold text-ink">{(brand?.name || "S").slice(0, 1)}</span>
         <span className="text-stone-600">Style card</span>
@@ -175,7 +177,7 @@ export default function ProjectView({ id }: { id: string }) {
             {brand.id === getDefaultBrandId() ? "Default" : "This project"} · v{card.version}
           </span>
         )}
-      </Link>
+      </button>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
@@ -306,7 +308,7 @@ export default function ProjectView({ id }: { id: string }) {
 
         <div className="space-y-6 lg:col-span-2">
           <div id="stylecard" className="scroll-mt-24">
-            <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} />
+            <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} onManage={setManage} />
           </div>
           <div className="surface overflow-hidden">
             <div className="flex items-center justify-between gap-2 border-b border-ink/8 px-5 py-3">
@@ -351,6 +353,25 @@ export default function ProjectView({ id }: { id: string }) {
         </div>
       </div>
       <SuggestionsPanel clips={clips} slots={slots} card={card} caption={captionStyle} />
+      {manage && (
+        <div role="dialog" aria-label="Style cards" className="fixed inset-0 z-40 overflow-y-auto bg-ink/40 p-4 backdrop-blur-sm" onClick={() => setManage(null)}>
+          <div className="animate-pop relative mx-auto mt-8 max-w-5xl rounded-[32px] bg-[#fbf6ee] p-6 shadow-2xl sm:p-8" onClick={(e) => e.stopPropagation()}>
+            <button aria-label="Close style cards" onClick={() => setManage(null)} className="absolute top-5 right-5 rounded-full bg-ink/5 p-2 text-stone-600 hover:bg-ink/10">
+              <IconX size={18} />
+            </button>
+            <StyleCardsManager
+              initialOpen={manage.open ?? null}
+              initialCreate={Boolean(manage.create)}
+              currentId={brand?.id ?? null}
+              onChanged={() => setStyleKey((k) => k + 1)}
+              onUse={(bid) => {
+                switchCard(bid);
+                setManage(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

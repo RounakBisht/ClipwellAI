@@ -2,7 +2,7 @@
 // M7: content calendar. "Up next" on top, an Apple-style month widget below.
 // Click a date to see what's planned that day and log how posted clips did.
 import { useMemo, useState } from "react";
-import { IconBrandInstagram, IconBrandYoutube, IconChevronLeft, IconChevronRight, IconX } from "@tabler/icons-react";
+import { IconBrandInstagram, IconBrandYoutube, IconCheck, IconChevronLeft, IconChevronRight, IconDownload, IconX } from "@tabler/icons-react";
 import { replacePlanSlots, updateClip } from "@/lib/store";
 import type { Clip, PlanSlot, Platform } from "@/lib/types";
 
@@ -55,6 +55,39 @@ export default function ContentCalendar({
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState("");
+  function confirm(msg: string) {
+    setSaved(msg);
+    setTimeout(() => setSaved(""), 3000);
+  }
+
+  // Calendar export: one row per planned post, opens in Excel or Google Sheets.
+  function exportCsv() {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+    const rows = [["Date", "Day", "Platform", "Post time", "Title", "Concept", "Length (s)", "Clip from", "Clip to"]];
+    for (const s of slots) {
+      const c = byId.get(s.clip_id);
+      const d = parse(s.day);
+      rows.push([
+        s.day,
+        d.toLocaleDateString("en-IN", { weekday: "short" }),
+        LABEL[s.platform],
+        BEST_TIME[s.platform],
+        c?.title || "",
+        c ? `${c.hook}. Why: ${c.reason}` : "",
+        c ? String(Math.round(c.end_s - c.start_s)) : "",
+        c ? fmt(c.start_s) : "",
+        c ? fmt(c.end_s) : "",
+      ]);
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.map((r) => r.map(esc).join(",")).join("\n")], { type: "text/csv;charset=utf-8" }));
+    a.download = `clipwell-content-calendar-${ymd(new Date())}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    confirm(`Exported ${slots.length} posts`);
+  }
 
   const byId = useMemo(() => new Map(clips.map((c) => [c.id, c])), [clips]);
   const byDay = useMemo(() => {
@@ -77,6 +110,7 @@ export default function ContentCalendar({
       const rows = weekPlan(clips);
       const saved = await replacePlanSlots(clips.map((c) => c.id), rows);
       onSlots(saved);
+      confirm(`Planned ${saved.length} posts`);
       if (saved[0]) {
         const d = parse(saved[0].day);
         setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
@@ -92,6 +126,7 @@ export default function ContentCalendar({
     try {
       await updateClip(clip.id, { outcome });
       onOutcome(clip, outcome);
+      confirm(`Saved: "${clip.title}" marked ${outcome === "ok" ? "OK" : outcome === "great" ? "Great" : "Poor"}`);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -104,14 +139,26 @@ export default function ContentCalendar({
     <section className="surface relative overflow-hidden p-5" aria-label="Content calendar">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Content calendar</h2>
-        <button
-          onClick={plan}
-          disabled={busy || !clips.length}
-          className="btn-press rounded-full bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
-        >
-          {busy ? "Planning…" : slots.length ? "Re-plan 7 days" : "Plan next 7 days"}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {slots.length > 0 && (
+            <button onClick={exportCsv} className="btn-press inline-flex items-center gap-1 rounded-full bg-ink/5 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-ink/10" title="Download as CSV for Excel or Google Sheets">
+              <IconDownload size={14} aria-hidden="true" /> Export
+            </button>
+          )}
+          <button
+            onClick={plan}
+            disabled={busy || !clips.length}
+            className="btn-press rounded-full bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+          >
+            {busy ? "Planning…" : slots.length ? "Re-plan 7 days" : "Plan next 7 days"}
+          </button>
+        </div>
       </div>
+      {saved && (
+        <p role="status" className="animate-pop mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
+          <IconCheck size={14} aria-hidden="true" /> {saved}
+        </p>
+      )}
 
       {/* Upper window: what's on now, and what's next */}
       <div className="mt-4 overflow-hidden rounded-[22px] bg-gradient-to-br from-ink to-teal-900 p-4 text-white">

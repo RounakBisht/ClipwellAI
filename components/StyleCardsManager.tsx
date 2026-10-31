@@ -1,7 +1,6 @@
 "use client";
 // Studio: all your style cards. Default card sits first; click one to see and edit it; add as many as you like.
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { IconCheck, IconPencil, IconPlus, IconStar, IconStarFilled, IconX } from "@tabler/icons-react";
 import { addStyleCard, createBrand, getDefaultBrandId, listBrands, listStyleCards, setDefaultBrandId, updateBrand } from "@/lib/store";
 import { DEFAULT_CAPTION_STYLE } from "@/lib/captions";
@@ -11,13 +10,24 @@ import type { Brand, CopyLanguage, Rule, StyleCard, StyleFields } from "@/lib/ty
 const PRESETS = ["Practical and warm", "Bold and playful", "Premium and calm", "Desi and friendly"];
 type Entry = { brand: Brand; cards: StyleCard[] };
 
-export default function StyleCardsManager() {
-  const params = useSearchParams();
+export default function StyleCardsManager({
+  initialOpen = null,
+  initialCreate = false,
+  currentId = null,
+  onChanged,
+  onUse,
+}: {
+  initialOpen?: string | null;
+  initialCreate?: boolean;
+  currentId?: string | null;
+  onChanged?: () => void;
+  onUse?: (brandId: string) => void;
+} = {}) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [defaultId, setDefaultId] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(params.get("card"));
+  const [openId, setOpenId] = useState<string | null>(initialCreate ? null : initialOpen);
   const [editing, setEditing] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(initialCreate);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", sells: "", audience: "", tonePreset: PRESETS[0], seedCaptions: "", language: "hinglish" as CopyLanguage });
@@ -29,6 +39,7 @@ export default function StyleCardsManager() {
     const d = getDefaultBrandId() || list[0]?.brand.id || null;
     setDefaultId(d);
     setEntries(list.filter((e) => e.cards.length));
+    onChanged?.();
   }
   useEffect(() => {
     load().catch((e) => setError(e.message));
@@ -57,7 +68,7 @@ export default function StyleCardsManager() {
         [],
         form.seedCaptions.trim() ? "Created from your past captions" : `Created from the "${form.tonePreset}" preset`,
       );
-      if (!sorted.length) makeDefault(b.id);
+      if (!sorted.length || !getDefaultBrandId()) makeDefault(b.id);
       setCreating(false);
       setForm({ ...form, name: "", sells: "", audience: "", seedCaptions: "" });
       await load();
@@ -97,7 +108,7 @@ export default function StyleCardsManager() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-ink">Style cards</h2>
-          <p className="text-sm text-stone-600">One per brand or client. New projects use the default card.</p>
+          <p className="text-sm text-stone-600">One per brand or client. Projects use the default card unless you pick another.</p>
         </div>
         <button
           onClick={() => {
@@ -193,6 +204,11 @@ export default function StyleCardsManager() {
               <p className="text-xs text-stone-600">v{open.cards[0].version} · {open.cards[0].change_note || "Updated"}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {onUse && open.brand.id !== currentId && (
+                <button onClick={() => onUse(open.brand.id)} className="btn-press rounded-full bg-teal-700 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-teal-800">
+                  Use for this project
+                </button>
+              )}
               {open.brand.id !== defaultId ? (
                 <button onClick={() => makeDefault(open.brand.id)} className="btn-press inline-flex items-center gap-1.5 rounded-full bg-marigold-soft px-3.5 py-1.5 text-sm font-semibold text-marigold-deep hover:bg-marigold/30">
                   <IconStar size={15} aria-hidden="true" /> Set as default
