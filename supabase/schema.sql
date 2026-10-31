@@ -1,4 +1,4 @@
--- Run this once in Supabase: Dashboard → SQL Editor → New query → paste → Run.
+-- Run in Supabase: Dashboard → SQL Editor → New query → paste → Run. Safe to run again after updates.
 -- Every table carries user_id, and row-level security means each signed-in user only sees their own rows.
 
 create extension if not exists "pgcrypto";
@@ -73,6 +73,10 @@ create table if not exists plan_slots (
   day date not null,
   created_at timestamptz not null default now()
 );
+
+-- Added in M1 (safe if they already exist)
+alter table projects add column if not exists source_name text;
+alter table projects add column if not exists source_size bigint;
 
 do $$
 declare t text;
