@@ -8,15 +8,28 @@ import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
 
 const MAX_MINUTES = 60;
 
-async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLanguage) {
-  const fd = new FormData();
-  fd.append("file", blob, "chunk.mp3");
-  fd.append("offset", String(offset));
-  fd.append("lang", lang);
-  const res = await fetch("/api/transcribe", { method: "POST", body: fd });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || `Transcription failed (${res.status}).`);
-  return json as { words: Word[]; segments: Segment[]; language: string | null };
+async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLanguage, part: string) {
+  let lastError = "";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const fd = new FormData();
+    fd.append("file", blob, "chunk.mp3");
+    fd.append("offset", String(offset));
+    fd.append("lang", lang);
+    let res: Response;
+    try {
+      res = await fetch("/api/transcribe", { method: "POST", body: fd });
+    } catch {
+      lastError = `Couldn't reach the transcription service for part ${part} (network error). If an ad blocker, VPN or privacy extension is on, pause it for this site and try again.`;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+      continue;
+    }
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return json as { words: Word[]; segments: Segment[]; language: string | null };
+    lastError = `${json.error || "Transcription failed"} (part ${part}, HTTP ${res.status})${json.detail ? ` — ${String(json.detail).slice(0, 200)}` : ""}`;
+    if (res.status !== 429 && res.status < 500) break;
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
+  }
+  throw new Error(lastError);
 }
 
 export default function NewProject() {
@@ -54,11 +67,13 @@ export default function NewProject() {
       setStage("Loading the video engine (about 30 MB, first time only)");
       await getFFmpeg();
       const results: { words: Word[]; segments: Segment[] }[] = [];
-      const pending: Promise<void>[] = [];
       let extracted = 0;
       let transcribed = 0;
       let totalChunks = 1;
       const bump = () => setProgress(0.05 + 0.9 * ((extracted + transcribed) / (2 * totalChunks)));
+      // Uploads run one at a time (a queue), while audio extraction keeps going in parallel.
+      let queue: Promise<void> = Promise.resolve();
+      let failure: Error | null = null;
 
       await extractAudioChunks(
         file,
@@ -67,18 +82,22 @@ export default function NewProject() {
           totalChunks = total;
           extracted++;
           bump();
-          pending.push(
-            transcribeChunk(blob, offset, lang).then((r) => {
-              results[i] = r;
+          queue = queue.then(async () => {
+            if (failure) return;
+            try {
+              results[i] = await transcribeChunk(blob, offset, lang, `${i + 1} of ${total}`);
               transcribed++;
               bump();
-            }),
-          );
+            } catch (e) {
+              failure = e as Error;
+            }
+          });
         },
         setStage,
       );
       setStage("Transcribing with word timings");
-      await Promise.all(pending);
+      await queue;
+      if (failure) throw failure;
 
       const words = results.flatMap((r) => r?.words || []);
       const segments = results.flatMap((r) => r?.segments || []);

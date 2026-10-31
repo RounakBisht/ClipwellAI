@@ -72,7 +72,7 @@ async function unmount(f: FFmpeg, dir: string) {
   }
 }
 
-export const CHUNK_SECONDS = 600; // 10 min of 32 kbps mono MP3 ≈ 2.4 MB, under Vercel's 4.5 MB limit
+export const CHUNK_SECONDS = 300; // 5 min of 32 kbps mono MP3 ≈ 1.2 MB, far under Vercel's 4.5 MB request limit
 
 // Extracts the audio in 10-minute MP3 chunks and hands each one over as soon as it's ready.
 export async function extractAudioChunks(
