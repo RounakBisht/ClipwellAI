@@ -82,3 +82,27 @@ export interface Clip {
   outcome?: "great" | "ok" | "poor" | null;
   created_at?: string;
 }
+
+// ---- M5/M6: platform copy with versions ----
+export type Platform = "shorts" | "reels";
+export interface ShortsCopy {
+  title: string;
+  description: string;
+  hashtags: string[];
+}
+export interface ReelsCopy {
+  caption: string;
+  hashtags: string[];
+  coverText: string;
+}
+export interface CopyVersion {
+  id: string;
+  clip_id: string;
+  platform: Platform;
+  version: number;
+  content: ShortsCopy | ReelsCopy;
+  language: string | null;
+  instruction: string | null;
+  made_rule: boolean;
+  created_at: string;
+}

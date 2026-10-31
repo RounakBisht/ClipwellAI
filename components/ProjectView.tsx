@@ -5,6 +5,7 @@ import { getProject } from "@/lib/store";
 import { recallFile, rememberFile } from "@/lib/media";
 import ClipMaker from "@/components/ClipMaker";
 import BriefAndClips from "@/components/BriefAndClips";
+import CopyPanel from "@/components/CopyPanel";
 import StyleCardPanel, { loadStyle } from "@/components/StyleCardPanel";
 import { DEFAULT_CAPTION_STYLE } from "@/lib/captions";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
@@ -19,6 +20,7 @@ export default function ProjectView({ id }: { id: string }) {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [card, setCard] = useState<StyleCard | null>(null);
   const [activeClip, setActiveClip] = useState<Clip | null>(null);
+  const [styleKey, setStyleKey] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const makerRef = useRef<HTMLDivElement>(null);
 
@@ -129,11 +131,25 @@ export default function ProjectView({ id }: { id: string }) {
             ) : (
               <p className="text-sm text-amber-700">Select the video file above to make clips.</p>
             )}
+            {activeClip ? (
+              <CopyPanel
+                clip={activeClip}
+                project={project}
+                brand={brand}
+                card={card}
+                onLearned={(c) => {
+                  setCard(c);
+                  setStyleKey((k) => k + 1);
+                }}
+              />
+            ) : (
+              <p className="mt-6 border-t border-sand pt-4 text-sm text-stone-500">Shorts and Reels copy appears here once you open an AI clip with &ldquo;Edit and export&rdquo;.</p>
+            )}
           </div>
         </div>
 
         <div className="space-y-6 lg:col-span-2">
-          <StyleCardPanel compact />
+          <StyleCardPanel compact refreshKey={styleKey} />
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-sand lg:sticky lg:top-20">
             <h2 className="border-b border-sand px-5 py-3 text-sm font-semibold">Transcript · click a line to clip from there</h2>
             <ol className="max-h-[560px] overflow-y-auto px-2 py-2 text-sm">

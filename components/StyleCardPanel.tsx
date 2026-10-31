@@ -13,7 +13,7 @@ export async function loadStyle(): Promise<{ brand: Brand | null; cards: StyleCa
   return { brand, cards };
 }
 
-export default function StyleCardPanel({ compact = false }: { compact?: boolean }) {
+export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { compact?: boolean; refreshKey?: number }) {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [cards, setCards] = useState<StyleCard[] | null>(null);
   const [error, setError] = useState("");
@@ -28,7 +28,7 @@ export default function StyleCardPanel({ compact = false }: { compact?: boolean 
         setCards(cards);
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [refreshKey]);
 
   async function create() {
     if (!form.name.trim()) return setError("Add your brand name first.");
@@ -140,7 +140,7 @@ export default function StyleCardPanel({ compact = false }: { compact?: boolean 
           </dd>
         </div>
       </dl>
-      {!compact && (
+      {(!compact || card.rules.length > 0) && (
         <div className="mt-4">
           <h3 className="text-sm font-semibold">Learned rules</h3>
           {card.rules.length === 0 ? (
@@ -149,7 +149,7 @@ export default function StyleCardPanel({ compact = false }: { compact?: boolean 
             <ul className="mt-2 space-y-1.5">
               {card.rules.map((r) => (
                 <li key={r.id} className="flex items-start justify-between gap-3 text-sm">
-                  <span className={r.active ? "" : "text-stone-400 line-through"}>
+                  <span className={`${r.active ? "" : "text-stone-400 line-through"} ${prev && !prev.rules.some((p) => p.id === r.id) ? "animate-pop rounded-md bg-marigold-soft px-1.5 text-marigold-deep" : ""}`}>
                     {r.text}
                     {r.platform !== "all" && <span className="ml-1 text-xs text-stone-500">({r.platform === "shorts" ? "Shorts" : "Reels"})</span>}
                   </span>

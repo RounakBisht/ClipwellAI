@@ -3,7 +3,7 @@
 // signed-in user's rows; in demo mode it keeps everything in this browser's localStorage.
 import { DEMO_MODE, SUPABASE_READY } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
-import type { Brand, Clip, NewProject, Project, ProjectSummary, Rule, StyleCard, StyleFields } from "@/lib/types";
+import type { Brand, Clip, CopyVersion, NewProject, Platform, Project, ProjectSummary, Rule, StyleCard, StyleFields } from "@/lib/types";
 
 const LOCAL = DEMO_MODE || !SUPABASE_READY;
 const KEY = "clipwell:projects";
@@ -194,3 +194,28 @@ export async function updateClip(id: string, patch: Partial<Clip>): Promise<void
   const { error } = await supabase.from("clips").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+// ---------- M5/M6: copy versions ----------
+export async function listCopyVersions(clipId: string): Promise<CopyVersion[]> {
+  if (LOCAL) return readKey<CopyVersion[]>("clipwell:copy", []).filter((c) => c.clip_id === clipId).sort((a, b) => a.version - b.version);
+  const supabase = createClient();
+  const { data, error } = await supabase.from("copy_versions").select("*").eq("clip_id", clipId).order("version");
+  if (error) throw new Error(error.message);
+  return (data || []) as CopyVersion[];
+}
+
+export async function addCopyVersion(input: Omit<CopyVersion, "id" | "version" | "created_at">): Promise<CopyVersion> {
+  const existing = (await listCopyVersions(input.clip_id)).filter((v) => v.platform === input.platform);
+  const version = (existing[existing.length - 1]?.version || 0) + 1;
+  if (LOCAL) {
+    const row: CopyVersion = { ...input, id: crypto.randomUUID(), version, created_at: new Date().toISOString() };
+    writeKey("clipwell:copy", [...readKey<CopyVersion[]>("clipwell:copy", []), row]);
+    return row;
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase.from("copy_versions").insert({ ...input, version }).select("*").single();
+  if (error) throw new Error(error.message);
+  return data as CopyVersion;
+}
+
+export type { Platform };
