@@ -20,14 +20,14 @@ export default function ProjectList() {
   }
 
   return (
-    <div className="surface p-6">
-      <h2 className="text-lg font-semibold">Your projects</h2>
+    <div className="surface p-6 sm:p-8">
+      <h2 className="text-center text-xl font-bold sm:text-2xl">Your projects</h2>
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       {!rows && !error && <p className="mt-3 text-sm text-stone-500">Loading…</p>}
       {rows && rows.length === 0 && (
         <>
-          <p className="mt-2 text-sm text-stone-600">No projects yet. Here&apos;s what happens after your first one:</p>
-          <ol className="mt-4 space-y-3 text-sm">
+          <p className="mt-2 text-center text-sm text-stone-600">No projects yet. Here&apos;s what happens after your first one:</p>
+          <ol className="mt-5 grid gap-4 text-sm sm:grid-cols-5 sm:gap-3">
             {[
               ["Transcript in", "Word-level timings, Hinglish or English."],
               ["Style card", "Set your brand voice once, inside the project."],
@@ -35,8 +35,8 @@ export default function ProjectList() {
               ["Export + copy", "9:16 MP4s with captions, Shorts and Reels copy."],
               ["Plan + learn", "Calendar for the week; results tune the next picks."],
             ].map(([t, d], i) => (
-              <li key={t} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marigold-soft text-xs font-bold text-marigold-deep">{i + 1}</span>
+              <li key={t} className="flex gap-3 sm:flex-col sm:items-center sm:text-center">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-marigold-soft text-sm font-bold text-marigold-deep">{i + 1}</span>
                 <span>
                   <span className="font-semibold text-ink">{t}</span>
                   <span className="block text-stone-600">{d}</span>

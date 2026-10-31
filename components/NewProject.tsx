@@ -43,7 +43,7 @@ async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLangu
 
 export default function NewProject() {
   const router = useRouter();
-  const [mode, setMode] = useState<"youtube" | "file">("youtube");
+  const [mode, setMode] = useState<"youtube" | "file">("file");
   const [link, setLink] = useState("");
   const ytId = youtubeId(link);
   const [pasted, setPasted] = useState("");
@@ -194,14 +194,14 @@ export default function NewProject() {
   }
 
   return (
-    <div className="surface p-6">
-      <h2 className="text-lg font-semibold">New project</h2>
-      <p className="mt-1 text-sm text-stone-600">
-        Paste a YouTube link, or upload a podcast or long video of any length. Uploads stay on your laptop; only the audio is sent for transcription.
+    <div className="surface p-6 sm:p-10">
+      <h2 className="text-center text-2xl font-bold sm:text-3xl">New project</h2>
+      <p className="mx-auto mt-2 max-w-xl text-center text-sm text-stone-600 sm:text-base">
+        Upload a podcast or long video of any length, or paste a YouTube link. Uploads stay on your laptop; only the audio is sent for transcription.
       </p>
 
-      <div role="tablist" aria-label="Source" className="seg mt-5 inline-flex">
-        {([["youtube", "YouTube link", IconBrandYoutube], ["file", "Upload a file", IconUpload]] as const).map(([k, label, Icon]) => (
+      <div className="mt-6 flex justify-center"><div role="tablist" aria-label="Source" className="seg inline-flex">
+        {([["file", "Upload a file", IconUpload], ["youtube", "YouTube link", IconBrandYoutube]] as const).map(([k, label, Icon]) => (
           <button
             key={k}
             role="tab"
@@ -213,7 +213,7 @@ export default function NewProject() {
             <Icon size={16} stroke={1.8} aria-hidden="true" /> {label}
           </button>
         ))}
-      </div>
+      </div></div>
 
       {mode === "youtube" && (
         <div className="mt-4">
@@ -305,7 +305,7 @@ export default function NewProject() {
       )}
 
       {mode === "file" && (
-      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-teal-700/25 bg-white/50 px-6 py-8 text-center hover:border-marigold hover:bg-marigold-soft/60">
+      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-teal-700/25 bg-white/50 px-6 py-12 text-center sm:py-16 hover:border-marigold hover:bg-marigold-soft/60">
         <input
           type="file"
           accept="video/*"
@@ -322,8 +322,9 @@ export default function NewProject() {
           </>
         ) : (
           <>
-            <span className="font-medium">Choose a video file</span>
-            <span className="mt-1 text-sm text-stone-500">MP4 works best. 720p keeps things fast.</span>
+            <IconUpload size={30} stroke={1.6} className="mb-2 text-teal-700" aria-hidden="true" />
+            <span className="text-lg font-semibold">Choose a video file</span>
+            <span className="mt-1 text-sm text-stone-600">MP4 works best. 720p keeps things fast. Any length.</span>
           </>
         )}
       </label>
