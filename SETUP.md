@@ -1,10 +1,11 @@
-# Setup checklist (Kartik, block A)
+# Setup checklist (block A)
 
-Do these in order. Total time: about 30–40 minutes. Never paste keys into the chat; they go only into Supabase and Vercel.
+Kartik owns steps 2–4, Rounak owns steps 1 and 5. Total time: about 30–40 minutes. Never paste keys into the chat; they go only into Supabase and Vercel.
 
-## 1. GitHub (2 min)
-1. Create a new **empty** repository (no README, no .gitignore) in the `AquaGT-Analytics` organization, e.g. `jhalak-studio`. Public is easier for judges to open.
-2. Send the name to Rounak, who pastes it into the chat. Claude pushes the code to it.
+## 1. GitHub (Rounak, 5 min)
+1. Rounak creates a new **empty** repository on his **personal** GitHub (no README, no .gitignore), e.g. `reelvala`. Public is easier for judges to open.
+2. Repo → Settings → Collaborators → Add people → Kartik's GitHub username. Kartik accepts the email invite.
+3. Rounak connects the repo to Claude and pastes `username/reelvala` into the chat. Claude pushes the code to it.
 
 ## 2. Supabase (10 min)
 1. supabase.com → New project → Region: **Mumbai (ap-south-1)** → set a database password → Create.
@@ -23,8 +24,9 @@ Do these in order. Total time: about 30–40 minutes. Never paste keys into the 
 - Groq: console.groq.com → API Keys → Create. Free, no card.
 - Anthropic: console.anthropic.com → API Keys → Create (uses your credits).
 
-## 5. Vercel (5 min, after Claude has pushed the code)
-1. vercel.com → Add New → Project → import the GitHub repo. Framework: Next.js (auto-detected).
+## 5. Vercel (Rounak, 5 min, after Claude has pushed the code)
+The repo lives on Rounak's personal GitHub, so Rounak creates the Vercel project from his own Vercel account. Kartik sends him the Supabase URL, anon key, Groq key and Anthropic key privately (WhatsApp, not this chat).
+1. vercel.com → Add New → Project → import the GitHub repo (approve Vercel's access to it). Framework: Next.js (auto-detected).
 2. **Environment Variables**: add every name from `.env.example` with its value.
 3. Deploy. Copy the live domain (e.g. `jhalak-studio.vercel.app`).
 4. Back in Supabase → **Authentication → URL Configuration**:

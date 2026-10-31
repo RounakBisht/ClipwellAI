@@ -1,5 +1,5 @@
 // One place to rename the product. Set NEXT_PUBLIC_APP_NAME in Vercel to override.
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Jhalak";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "ReelVALA";
 export const APP_TAGLINE = "Long videos in, on-brand Shorts and Reels out";
 
 // When "true", the studio works without Google sign-in and keeps data in this browser only.
