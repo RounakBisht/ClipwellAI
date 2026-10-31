@@ -1,22 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --brand: #7c3aed;
+  --background: #fff8ec;
+  --foreground: #17262a;
 }
 
+/* ClipwellAI brand: cream base, marigold for energy, deep teal for action */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand: var(--brand);
+  --color-cream: #fff8ec;
+  --color-sand: #f1e4cc;
+  --color-ink: #17262a;
+  --color-marigold: #f6a21e;
+  --color-marigold-deep: #a85f00;
+  --color-marigold-soft: #fff0d2;
+  --color-brand: #0f766e;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Baloo 2", ui-rounded, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Motion: gentle, and switched off for people who prefer reduced motion */
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-8px) rotate(var(--r, 0deg)); } }
+@keyframes bar { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+@keyframes hl { 0%, 30% { color: #f6a21e; } 34%, 100% { color: #fff; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(0.7); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.animate-rise { animation: rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-bob { animation: bob 4.5s ease-in-out infinite; }
+.animate-bar { animation: bar 1.1s ease-in-out infinite; transform-origin: bottom; }
+.animate-hl { display: inline-block; animation: hl 2.4s steps(1, end) infinite; }
+.animate-pop { animation: pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.btn-press { transition: transform 0.12s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
+.btn-press:hover { transform: translateY(-1px); }
+.btn-press:active { transform: translateY(1px) scale(0.99); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 @font-face { font-family: "Baloo 2"; src: url("/fonts/Baloo2-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }

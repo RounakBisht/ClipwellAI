@@ -87,8 +87,8 @@ export default function ClipMaker({
           <label className="text-sm">
             <span className="mb-1 block font-medium">Start</span>
             <div className="flex gap-2">
-              <input value={startText} onChange={(e) => setStartText(e.target.value)} className="w-full rounded-lg border border-stone-300 px-3 py-2 font-mono" />
-              <button onClick={() => setStartText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-stone-200 hover:bg-stone-50">
+              <input value={startText} onChange={(e) => setStartText(e.target.value)} className="w-full rounded-lg border border-sand px-3 py-2 font-mono" />
+              <button onClick={() => setStartText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-sand hover:bg-stone-50">
                 Now
               </button>
             </div>
@@ -96,8 +96,8 @@ export default function ClipMaker({
           <label className="text-sm">
             <span className="mb-1 block font-medium">End</span>
             <div className="flex gap-2">
-              <input value={endText} onChange={(e) => setEndText(e.target.value)} className="w-full rounded-lg border border-stone-300 px-3 py-2 font-mono" />
-              <button onClick={() => setEndText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-stone-200 hover:bg-stone-50">
+              <input value={endText} onChange={(e) => setEndText(e.target.value)} className="w-full rounded-lg border border-sand px-3 py-2 font-mono" />
+              <button onClick={() => setEndText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-sand hover:bg-stone-50">
                 Now
               </button>
             </div>
@@ -111,7 +111,7 @@ export default function ClipMaker({
         {busy && (
           <div className="mt-4">
             <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-              <div className="h-full bg-violet-600 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+              <div className="h-full bg-teal-700 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
             <p className="mt-2 text-sm text-stone-600">Rendering 9:16 MP4 with captions… {Math.round(progress * 100)}%</p>
           </div>
@@ -122,7 +122,7 @@ export default function ClipMaker({
         <button
           onClick={doExport}
           disabled={!valid || busy}
-          className="mt-4 w-full rounded-xl bg-violet-600 px-5 py-3 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+          className="mt-4 w-full btn-press rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
         >
           {busy ? "Exporting…" : "Export MP4 (9:16, captions burned in)"}
         </button>

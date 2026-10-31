@@ -123,13 +123,13 @@ export default function NewProject() {
   }
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
+    <div className="rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
       <h2 className="text-lg font-semibold">New project</h2>
       <p className="mt-1 text-sm text-stone-600">
         Upload a podcast or long video (MP4, up to 45 min). It stays on your laptop; only the audio is sent for transcription.
       </p>
 
-      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-stone-300 px-6 py-8 text-center hover:border-violet-400 hover:bg-violet-50/40">
+      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-sand px-6 py-8 text-center hover:border-marigold hover:bg-marigold-soft/60">
         <input
           type="file"
           accept="video/*"
@@ -160,7 +160,7 @@ export default function NewProject() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={busy}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              className="w-full rounded-lg border border-sand px-3 py-2"
             />
           </label>
           <label className="text-sm">
@@ -169,7 +169,7 @@ export default function NewProject() {
               value={lang}
               onChange={(e) => setLang(e.target.value as TranscriptLanguage)}
               disabled={busy}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              className="w-full rounded-lg border border-sand px-3 py-2"
             >
               {(["hinglish", "en", "hi", "auto"] as TranscriptLanguage[]).map((l) => (
                 <option key={l} value={l}>
@@ -184,7 +184,7 @@ export default function NewProject() {
       {busy && (
         <div className="mt-5">
           <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-            <div className="h-full bg-violet-600 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+            <div className="h-full bg-teal-700 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
           <p className="mt-2 text-sm text-stone-600">{stage}…</p>
         </div>
@@ -194,7 +194,7 @@ export default function NewProject() {
       <button
         onClick={start}
         disabled={!file || busy}
-        className="mt-5 w-full rounded-xl bg-violet-600 px-5 py-3 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+        className="mt-5 w-full btn-press rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
       >
         {busy ? "Working…" : "Transcribe video"}
       </button>

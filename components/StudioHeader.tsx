@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { APP_NAME, DEMO_MODE, SUPABASE_READY } from "@/lib/config";
+import { DEMO_MODE, SUPABASE_READY } from "@/lib/config";
+import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function StudioHeader() {
@@ -13,10 +14,10 @@ export default async function StudioHeader() {
     email = user?.email ?? null;
   }
   return (
-    <header className="border-b border-stone-200 bg-white">
+    <header className="sticky top-0 z-20 border-b border-sand bg-cream/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/studio" className="text-lg font-semibold tracking-tight">
-          {APP_NAME} <span className="font-normal text-stone-400">Studio</span>
+        <Link href="/studio" aria-label="Studio home">
+          <Logo size={28} suffix="Studio" />
         </Link>
         <div className="flex items-center gap-4 text-sm text-stone-600">
           {demo ? (
@@ -25,7 +26,7 @@ export default async function StudioHeader() {
             <>
               <span>{email}</span>
               <form action="/auth/signout" method="post">
-                <button className="rounded-lg px-3 py-1.5 ring-1 ring-stone-200 hover:bg-stone-50">Sign out</button>
+                <button className="rounded-lg px-3 py-1.5 ring-1 ring-sand hover:bg-stone-50">Sign out</button>
               </form>
             </>
           )}

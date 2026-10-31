@@ -14,7 +14,7 @@ export default function StudioPage() {
         </div>
         <div className="space-y-6 lg:col-span-2">
           <ProjectList />
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
+          <div className="rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Style card</h2>
               <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">Coming in M3</span>
