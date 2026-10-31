@@ -125,6 +125,15 @@ export function setDefaultBrandId(id: string) {
   window.localStorage.setItem(DEFAULT_KEY, id);
 }
 
+// Which style card a project uses (falls back to the default card).
+export function getProjectBrandId(projectId: string): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(`clipwell:projectBrand:${projectId}`);
+}
+export function setProjectBrandId(projectId: string, brandId: string) {
+  window.localStorage.setItem(`clipwell:projectBrand:${projectId}`, brandId);
+}
+
 export async function listBrands(): Promise<Brand[]> {
   if (LOCAL) return readLocalBrands();
   const supabase = createClient();

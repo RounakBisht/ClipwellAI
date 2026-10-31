@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { addStyleCard, getProject, listPlanSlots } from "@/lib/store";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { addStyleCard, getDefaultBrandId, getProject, getProjectBrandId, listPlanSlots, setProjectBrandId } from "@/lib/store";
 import { recallFile, rememberFile } from "@/lib/media";
 import ClipMaker from "@/components/ClipMaker";
 import BriefAndClips from "@/components/BriefAndClips";
@@ -25,6 +25,7 @@ export default function ProjectView({ id }: { id: string }) {
   const [card, setCard] = useState<StyleCard | null>(null);
   const [activeClip, setActiveClip] = useState<Clip | null>(null);
   const [styleKey, setStyleKey] = useState(0);
+  const [brandId, setBrandId] = useState<string | null>(null);
   const [clips, setClips] = useState<Clip[]>([]);
   const [slots, setSlots] = useState<PlanSlot[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -34,13 +35,25 @@ export default function ProjectView({ id }: { id: string }) {
   useEffect(() => {
     getProject(id).then(setProject).catch((e) => setError(e.message));
     setFile(recallFile(id));
-    loadStyle()
+    setBrandId(getProjectBrandId(id));
+  }, [id]);
+
+  useEffect(() => {
+    loadStyle(brandId)
       .then(({ brand, cards }) => {
         setBrand(brand);
         setCard(cards[0] || null);
       })
       .catch(() => {});
-  }, [id]);
+  }, [brandId, styleKey]);
+
+  const switchCard = useCallback(
+    (bid: string) => {
+      setProjectBrandId(id, bid);
+      setBrandId(bid);
+    },
+    [id],
+  );
 
   const ytId = projectYoutubeId(project?.source_name);
 
@@ -157,7 +170,11 @@ export default function ProjectView({ id }: { id: string }) {
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marigold text-xs font-bold text-ink">{(brand?.name || "S").slice(0, 1)}</span>
         <span className="text-stone-600">Style card</span>
         <span className="font-semibold text-ink">{brand ? brand.name : "Set one up"}</span>
-        {card && <span className="rounded-full bg-marigold-soft px-2 py-0.5 text-[11px] font-bold text-marigold-deep">Default · v{card.version}</span>}
+        {card && brand && (
+          <span className="rounded-full bg-marigold-soft px-2 py-0.5 text-[11px] font-bold text-marigold-deep">
+            {brand.id === getDefaultBrandId() ? "Default" : "This project"} · v{card.version}
+          </span>
+        )}
       </Link>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
@@ -248,9 +265,22 @@ export default function ProjectView({ id }: { id: string }) {
                     </button>
                   )}
                 </div>
-                <label className="mt-4 block cursor-pointer rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-700 hover:bg-white">
+                <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[18px] bg-emerald-50/80 p-3">
+              <a
+                href={`https://studio.youtube.com/video/${ytId}/edit`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-press inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                <IconDownload size={16} stroke={2} aria-hidden="true" /> Download the video
+              </a>
+              <p className="min-w-0 flex-1 text-xs leading-snug text-emerald-900">
+                YouTube doesn&apos;t let other apps download videos, so this step happens on YouTube. If it&apos;s your channel, open it in YouTube Studio, click ⋮ then Download, and upload the file here to export MP4s.
+              </p>
+            </div>
+                <label className="mt-3 block cursor-pointer rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-700 hover:bg-white">
                   <input type="file" accept="video/*" className="hidden" onChange={(e) => reselect(e.target.files?.[0] || null)} />
-                  <span className="font-semibold text-teal-800">Add the video file</span> to preview in 9:16 and export captioned MP4s. YouTube doesn&apos;t allow downloading videos, so the file has to come from you.
+                  <span className="font-semibold text-teal-800">Add the video file</span> you downloaded, to preview in 9:16 and export captioned MP4s. The transcript and clips stay as they are.
                 </label>
               </div>
             ) : (
@@ -276,7 +306,7 @@ export default function ProjectView({ id }: { id: string }) {
 
         <div className="space-y-6 lg:col-span-2">
           <div id="stylecard" className="scroll-mt-24">
-            <StyleCardPanel compact refreshKey={styleKey} />
+            <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} />
           </div>
           <div className="surface overflow-hidden">
             <div className="flex items-center justify-between gap-2 border-b border-ink/8 px-5 py-3">

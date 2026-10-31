@@ -6,7 +6,7 @@ import { createProject } from "@/lib/store";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
 import { YT_PREFIX, parsePastedTranscript, youtubeId } from "@/lib/youtube";
-import { IconBrandYoutube, IconUpload } from "@tabler/icons-react";
+import { IconBrandYoutube, IconDownload, IconUpload } from "@tabler/icons-react";
 
 const MAX_MINUTES = 60;
 
@@ -230,6 +230,21 @@ export default function NewProject() {
                 allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
               />
+            </div>
+          )}
+          {ytId && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[20px] bg-emerald-50/80 p-3">
+              <a
+                href={`https://studio.youtube.com/video/${ytId}/edit`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-press inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                <IconDownload size={16} stroke={2} aria-hidden="true" /> Download the video
+              </a>
+              <p className="min-w-0 flex-1 text-xs leading-snug text-emerald-900">
+                YouTube doesn&apos;t let other apps download videos, so this step happens on YouTube. If it&apos;s your channel, open it in YouTube Studio, click ⋮ then Download, and upload the file here to export MP4s.
+              </p>
             </div>
           )}
           {ytId && (

@@ -1,20 +1,32 @@
 "use client";
 import { useEffect, useState } from "react";
-import { addStyleCard, getBrand, listStyleCards, saveBrand } from "@/lib/store";
+import Link from "next/link";
+import { addStyleCard, getBrand, getDefaultBrandId, listBrands, listStyleCards, saveBrand } from "@/lib/store";
 import { DEFAULT_CAPTION_STYLE } from "@/lib/captions";
 import { LANGUAGE_LABEL } from "@/lib/format";
 import type { Brand, CopyLanguage, Rule, StyleCard } from "@/lib/types";
 
 const PRESETS = ["Practical and warm", "Bold and playful", "Premium and calm", "Desi and friendly"];
 
-export async function loadStyle(): Promise<{ brand: Brand | null; cards: StyleCard[] }> {
-  const brand = await getBrand();
+export async function loadStyle(brandId?: string | null): Promise<{ brand: Brand | null; cards: StyleCard[] }> {
+  const brand = (brandId && (await listBrands()).find((b) => b.id === brandId)) || (await getBrand());
   const cards = brand ? await listStyleCards(brand.id) : [];
   return { brand, cards };
 }
 
-export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { compact?: boolean; refreshKey?: number }) {
+export default function StyleCardPanel({
+  compact = false,
+  refreshKey = 0,
+  brandId = null,
+  onSwitch,
+}: {
+  compact?: boolean;
+  refreshKey?: number;
+  brandId?: string | null;
+  onSwitch?: (brandId: string) => void;
+}) {
   const [brand, setBrand] = useState<Brand | null>(null);
+  const [all, setAll] = useState<Brand[]>([]);
   const [cards, setCards] = useState<StyleCard[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,13 +34,14 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
   const [form, setForm] = useState({ name: "", sells: "", audience: "", tonePreset: PRESETS[0], seedCaptions: "", language: "hinglish" as CopyLanguage });
 
   useEffect(() => {
-    loadStyle()
+    loadStyle(brandId)
       .then(({ brand, cards }) => {
         setBrand(brand);
         setCards(cards);
       })
       .catch((e) => setError(e.message));
-  }, [refreshKey]);
+    if (onSwitch) listBrands().then(setAll).catch(() => {});
+  }, [refreshKey, brandId, onSwitch]);
 
   async function create() {
     if (!form.name.trim()) return setError("Add your brand name first.");
@@ -125,7 +138,23 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
           v{card.version} {cards.length > 1 ? `· ${showHistory ? "hide" : "history"}` : ""}
         </button>
       </div>
-      <p className="mt-0.5 text-xs text-stone-500">{brand?.name}</p>
+      {onSwitch && brand ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="card-switch">Style card for this project</label>
+          <select id="card-switch" value={brand.id} onChange={(e) => onSwitch(e.target.value)} className="field min-w-0 flex-1 px-3 py-1.5 text-sm font-semibold">
+            {all.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+                {b.id === getDefaultBrandId() ? " (default)" : ""}
+              </option>
+            ))}
+          </select>
+          <Link href={`/studio?card=${brand.id}#style-cards`} className="rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800">Edit</Link>
+          <Link href="/studio#style-cards" className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-ink/10">+ New</Link>
+        </div>
+      ) : (
+        <p className="mt-0.5 text-xs text-stone-500">{brand?.name}</p>
+      )}
       <dl className="mt-3 divide-y divide-ink/8 text-sm">
         {rows.map(([k, label, v]) => (
           <div key={k} className="flex justify-between gap-4 py-2">

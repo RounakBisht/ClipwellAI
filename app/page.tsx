@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import SignInButton from "@/components/SignInButton";
 import Logo, { LogoMark } from "@/components/Logo";
 import { APP_NAME, DEMO_MODE, PRODUCT_SPACE_URL, SUPABASE_READY, WISPR_URL } from "@/lib/config";
-import { IconBrandYoutube, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography, IconWand } from "@tabler/icons-react";
+import { IconTrophy, IconBrandYoutube, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography, IconWand } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
@@ -40,18 +40,15 @@ export default async function Home({
     <main className="min-h-[100dvh] overflow-x-hidden">
       <header className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-6 py-6">
         <Logo />
-        <div className="hidden flex-col items-end gap-1 text-right text-sm sm:flex">
+        <div className="hidden flex-col items-end gap-2 text-right text-sm sm:flex">
           <a href={WISPR_URL} target="_blank" rel="noreferrer" className="chip-soft inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-medium text-ink hover:text-teal-800">
             <IconMicrophone size={15} stroke={2} className="text-teal-700" aria-hidden="true" />
             Built by voice with <span className="underline decoration-marigold decoration-2 underline-offset-4">Wispr Flow</span>
           </a>
-          <span className="pr-2 text-xs text-stone-600">
-            Built at{" "}
-            <a href={PRODUCT_SPACE_URL} target="_blank" rel="noreferrer" className="font-semibold text-teal-800 underline decoration-teal-700/30 underline-offset-2 hover:decoration-teal-700">
-              Product Space
-            </a>{" "}
-            Hackathon
-          </span>
+          <a href={PRODUCT_SPACE_URL} target="_blank" rel="noreferrer" className="chip-soft inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-medium text-ink hover:text-teal-800">
+            <IconTrophy size={15} stroke={2} className="text-marigold-deep" aria-hidden="true" />
+            Built at <span className="underline decoration-marigold decoration-2 underline-offset-4">Product Space</span> Hackathon
+          </a>
         </div>
       </header>
 
