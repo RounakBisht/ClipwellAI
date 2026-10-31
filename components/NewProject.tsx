@@ -208,7 +208,7 @@ export default function NewProject() {
             aria-selected={mode === k}
             disabled={busy}
             onClick={() => setMode(k)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium ${mode === k ? "seg-on text-teal-800" : "text-stone-600 hover:text-ink"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap sm:px-4 ${mode === k ? "seg-on text-teal-800" : "text-stone-600 hover:text-ink"}`}
           >
             <Icon size={16} stroke={1.8} aria-hidden="true" /> {label}
           </button>

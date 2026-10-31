@@ -6,7 +6,7 @@ import ProjectView from "@/components/ProjectView";
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return (
-    <main className="min-h-screen">
+    <main className="min-h-[100dvh] overflow-x-clip">
       <StudioHeader />
       <ProjectView id={id} />
     </main>

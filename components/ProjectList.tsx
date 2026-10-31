@@ -25,7 +25,26 @@ export default function ProjectList() {
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       {!rows && !error && <p className="mt-3 text-sm text-stone-500">Loading…</p>}
       {rows && rows.length === 0 && (
-        <p className="mt-3 text-sm text-stone-500">No projects yet. Upload a video to start.</p>
+        <>
+          <p className="mt-2 text-sm text-stone-600">No projects yet. Here&apos;s what happens after your first one:</p>
+          <ol className="mt-4 space-y-3 text-sm">
+            {[
+              ["Transcript in", "Word-level timings, Hinglish or English."],
+              ["Style card", "Set your brand voice once, inside the project."],
+              ["Speak a brief", "AI picks clips and says why each one works."],
+              ["Export + copy", "9:16 MP4s with captions, Shorts and Reels copy."],
+              ["Plan + learn", "Calendar for the week; results tune the next picks."],
+            ].map(([t, d], i) => (
+              <li key={t} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marigold-soft text-xs font-bold text-marigold-deep">{i + 1}</span>
+                <span>
+                  <span className="font-semibold text-ink">{t}</span>
+                  <span className="block text-stone-600">{d}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
       <ul className="mt-3 divide-y divide-stone-100">
         {rows?.map((p) => (

@@ -147,7 +147,7 @@ export default function ProjectView({ id }: { id: string }) {
   if (project === undefined) return <p className="mx-auto max-w-6xl px-6 py-8 text-stone-500">Loading project…</p>;
   if (project === null)
     return (
-      <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <p>Project not found.</p>
         <Link href="/studio" className="text-teal-700">Back to the studio</Link>
       </div>
@@ -166,12 +166,12 @@ export default function ProjectView({ id }: { id: string }) {
       </div>
       <button
         onClick={() => setManage(brand ? { open: brand.id } : { create: true })}
-        className="lift chip-soft mt-3 inline-flex items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-sm"
+        className="lift chip-soft mt-3 inline-flex max-w-full items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-sm whitespace-nowrap"
         title="Open this style card"
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marigold text-xs font-bold text-ink">{(brand?.name || "S").slice(0, 1)}</span>
         <span className="text-stone-600">Style card</span>
-        <span className="font-semibold text-ink">{brand ? brand.name : "Set one up"}</span>
+        <span className="truncate font-semibold text-ink">{brand ? brand.name : "Set one up"}</span>
         {card && brand && (
           <span className="rounded-full bg-marigold-soft px-2 py-0.5 text-[11px] font-bold text-marigold-deep">
             {brand.id === getDefaultBrandId() ? "Default" : "This project"} · v{card.version}
@@ -179,8 +179,8 @@ export default function ProjectView({ id }: { id: string }) {
         )}
       </button>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div className="min-w-0 lg:col-span-3">
           <div className="overflow-hidden rounded-[28px] bg-black shadow-[0_30px_60px_-30px_rgba(16,60,56,.65)]">
             {file ? (
               <video
@@ -306,7 +306,7 @@ export default function ProjectView({ id }: { id: string }) {
           </div>
         </div>
 
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <div id="stylecard" className="scroll-mt-24">
             <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} onManage={setManage} />
           </div>
