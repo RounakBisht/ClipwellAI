@@ -54,3 +54,13 @@ h1, h2, h3, .font-display {
 @font-face { font-family: "Baloo 2"; src: url("/fonts/Baloo2-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Baloo 2"; src: url("/fonts/Baloo2-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Baloo 2"; src: url("/fonts/Baloo2-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+
+/* Keyboard focus: one clear ring everywhere (mouse clicks stay clean). */
+:where(a, button, input, select, textarea, summary, [role="radio"], [tabindex]):focus-visible {
+  outline: 2.5px solid var(--color-brand, #0f766e);
+  outline-offset: 2px;
+  border-radius: 0.6rem;
+}
+
+/* Placeholder text meets AA contrast on white inputs. */
+input::placeholder, textarea::placeholder { color: #78716c; opacity: 1; }

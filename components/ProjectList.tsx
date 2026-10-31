@@ -34,10 +34,10 @@ export default function ProjectList() {
               <span className="block truncate font-medium">{p.title}</span>
               <span className="text-xs text-stone-500">
                 {fmtTime(p.duration_s)} · {LANGUAGE_LABEL[p.language] || p.language} ·{" "}
-                {new Date(p.created_at).toLocaleString()}
+                {new Date(p.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
               </span>
             </Link>
-            <button onClick={() => remove(p.id)} className="ml-3 text-xs text-stone-400 hover:text-red-600">
+            <button onClick={() => remove(p.id)} className="ml-3 rounded-md px-2 py-1 text-xs text-stone-500 hover:bg-red-50 hover:text-red-700">
               Delete
             </button>
           </li>

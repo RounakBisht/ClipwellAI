@@ -20,7 +20,7 @@ export default function Logo({ size = 32, suffix }: { size?: number; suffix?: st
       <span className="font-display text-xl font-extrabold tracking-tight text-ink">
         {base}
         {ai && <span className="text-teal-700">AI</span>}
-        {suffix && <span className="ml-1.5 font-semibold text-stone-400">{suffix}</span>}
+        {suffix && <span className="ml-1.5 font-semibold text-stone-500">{suffix}</span>}
       </span>
     </span>
   );

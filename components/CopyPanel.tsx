@@ -232,7 +232,7 @@ export default function CopyPanel({
               <label className="flex items-center gap-2 text-sm text-stone-700">
                 <input type="checkbox" checked={makeRule} onChange={(e) => setMakeRule(e.target.checked)} className="h-4 w-4 accent-teal-700" disabled={!card} />
                 Make this a rule for all future copy
-                {!card && <span className="text-xs text-stone-400">(set up a style card first)</span>}
+                {!card && <span className="text-xs text-stone-500">(set up a style card first)</span>}
               </label>
               <button onClick={applyEdit} disabled={Boolean(busy) || !edit.trim()} className="btn-press rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
                 {busy === "edit" ? "Applying…" : "Apply edit"}

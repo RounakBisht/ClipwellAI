@@ -122,7 +122,7 @@ export default function ProjectView({ id }: { id: string }) {
           <div ref={makerRef} className="mt-6 scroll-mt-24 rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{activeClip ? activeClip.title : "Edit and export"}</h2>
-              {activeClip && <span className="shrink-0 rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink">{activeClip.score}</span>}
+              {activeClip && <span title="AI score out of 100: hook strength, clarity and fit with your brief" className="shrink-0 rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink">Score {activeClip.score}</span>}
             </div>
             <p className="mt-1 mb-5 text-sm text-stone-600">
               {activeClip ? activeClip.reason : "Pick an AI clip above, or click a transcript line to start your own. Preview it in 9:16 and export an MP4 with captions."}
@@ -171,7 +171,7 @@ export default function ProjectView({ id }: { id: string }) {
                       onClick={() => seek(s)}
                       className={`flex w-full gap-3 rounded-lg px-3 py-2 text-left hover:bg-stone-50 ${active ? "bg-teal-50" : ""}`}
                     >
-                      <span className="w-12 shrink-0 font-mono text-xs text-stone-400">{fmtTime(s)}</span>
+                      <span className="w-12 shrink-0 font-mono text-xs text-stone-500">{fmtTime(s)}</span>
                       <span className={active ? "text-teal-900" : "text-stone-700"}>{text}</span>
                     </button>
                   </li>

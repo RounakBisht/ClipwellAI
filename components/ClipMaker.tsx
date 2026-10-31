@@ -154,7 +154,7 @@ export default function ClipMaker({
         >
           {busy ? "Exporting…" : "Export MP4 (9:16, captions burned in)"}
         </button>
-        <p className="mt-2 text-xs text-stone-500">Rendering happens in your browser, so a 30 s clip takes roughly 30–60 s. Keep this tab open until the download starts.</p>
+        <p className="mt-2 text-xs text-stone-500">Rendering happens in your browser, so a 30 s clip takes roughly 30 to 60 s. Keep this tab open until the download starts.</p>
       </div>
     </div>
   );

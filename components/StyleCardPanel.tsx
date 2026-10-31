@@ -78,9 +78,9 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
         <h2 className="text-lg font-semibold">Set up your style card</h2>
         <p className="mt-1 text-sm text-stone-600">One minute, once. Every clip and caption follows it, and it learns from your edits.</p>
         <div className="mt-4 space-y-3 text-sm">
-          <input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="Brand name, e.g. IFFCO Urban Gardens" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="What you sell, e.g. potting mix and plant food" value={form.sells} onChange={(e) => setForm({ ...form, sells: e.target.value })} />
-          <input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="Audience, e.g. new plant parents in metros" value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })} />
+          <label className="block text-sm"><span className="mb-1 block font-medium">Brand name</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. IFFCO Urban Gardens" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">What you sell</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. potting mix and plant food" value={form.sells} onChange={(e) => setForm({ ...form, sells: e.target.value })} /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Audience</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. new plant parents in metros" value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })} /></label>
           <div className="grid grid-cols-2 gap-3">
             <label>
               <span className="mb-1 block font-medium">Tone</span>
@@ -96,7 +96,7 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
             </label>
           </div>
           <label className="block">
-            <span className="mb-1 block font-medium">Optional: paste 1–3 captions from past Reels you liked</span>
+            <span className="mb-1 block font-medium">Optional: paste 1 to 3 captions from past Reels you liked</span>
             <textarea rows={3} className="w-full rounded-lg border border-sand px-3 py-2" placeholder="The AI reads these to match your voice from day one." value={form.seedCaptions} onChange={(e) => setForm({ ...form, seedCaptions: e.target.value })} />
           </label>
         </div>

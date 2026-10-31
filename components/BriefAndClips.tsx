@@ -137,10 +137,10 @@ export default function BriefAndClips({
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-base leading-snug font-bold text-ink">{c.title}</h3>
-                  <span className="shrink-0 rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink" title="Predicted performance">{c.score}</span>
+                  <span className="shrink-0 rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink" title="AI score out of 100: hook strength, clarity and fit with your brief" aria-label={`AI score ${c.score} out of 100`}>{c.score}</span>
                 </div>
                 <p className="mt-1 text-xs text-stone-500">
-                  {fmtTime(c.start_s)}–{fmtTime(c.end_s)} · {Math.round(c.end_s - c.start_s)} s
+                  {fmtTime(c.start_s)} to {fmtTime(c.end_s)} · {Math.round(c.end_s - c.start_s)} s
                 </p>
                 <p className="mt-2 text-sm font-semibold text-teal-800">&ldquo;{c.hook}&rdquo;</p>
                 <p className="mt-1 text-sm text-stone-700">

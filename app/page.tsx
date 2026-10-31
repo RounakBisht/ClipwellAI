@@ -25,7 +25,7 @@ export default async function Home({
 
   const steps = [
     { n: "1", kicker: "Upload karo", title: "Drop in a long video", body: "A podcast, workshop or founder talk, up to 45 minutes. It never leaves your laptop." },
-    { n: "2", kicker: "Bolo, brief do", title: "Speak your brief", body: "Tell it what you want with Wispr. Get 3–5 clips, each with a reason it was picked." },
+    { n: "2", kicker: "Bolo, brief do", title: "Speak your brief", body: "Tell it what you want with Wispr. Get 3 to 5 clips, each with a reason it was picked." },
     { n: "3", kicker: "Export & post", title: "Captioned 9:16 MP4s", body: "Download Shorts and Reels with burned-in captions and copy written in your brand's voice." },
   ];
 
@@ -120,8 +120,8 @@ export default async function Home({
         </div>
       </section>
 
-      <footer className="border-t border-sand py-8 text-center text-sm text-stone-500">
-        <span className="inline-flex items-center gap-2">
+      <footer className="border-t border-sand px-6 py-8 text-center text-sm text-stone-500">
+        <span className="inline-flex items-start gap-2 text-left sm:items-center">
           <LogoMark size={18} /> Made by Rounak &amp; Kartik for the Product Space × Wispr Flow AI Hackathon
         </span>
       </footer>
@@ -149,7 +149,7 @@ function HeroVisual() {
         </div>
         <div className="mt-3 flex gap-2">
           {["0:42", "11:05", "27:30"].map((t) => (
-            <span key={t} className="rounded-full bg-marigold-soft px-2 py-0.5 text-xs font-semibold text-marigold-deep">
+            <span key={t} className="whitespace-nowrap rounded-full bg-marigold-soft px-2 py-0.5 text-xs font-semibold text-marigold-deep">
               clip @ {t}
             </span>
           ))}

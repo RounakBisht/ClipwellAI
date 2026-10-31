@@ -25,7 +25,7 @@ async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLangu
     }
     const json = await res.json().catch(() => ({}));
     if (res.ok) return json as { words: Word[]; segments: Segment[]; language: string | null };
-    lastError = `${json.error || "Transcription failed"} (part ${part}, HTTP ${res.status})${json.detail ? ` — ${String(json.detail).slice(0, 200)}` : ""}`;
+    lastError = `${json.error || "Transcription failed"} (part ${part}, HTTP ${res.status})${json.detail ? `: ${String(json.detail).slice(0, 200)}` : ""}`;
     if (res.status !== 429 && res.status < 500) break;
     await new Promise((r) => setTimeout(r, 1500 * attempt));
   }
