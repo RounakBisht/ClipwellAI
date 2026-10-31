@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getProject } from "@/lib/store";
 import { recallFile, rememberFile } from "@/lib/media";
 import ClipMaker from "@/components/ClipMaker";
+import BriefAndClips from "@/components/BriefAndClips";
+import StyleCardPanel, { loadStyle } from "@/components/StyleCardPanel";
+import { DEFAULT_CAPTION_STYLE } from "@/lib/captions";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
-import type { Project } from "@/lib/types";
+import type { Brand, Clip, Project, StyleCard } from "@/lib/types";
 
 export default function ProjectView({ id }: { id: string }) {
   const [project, setProject] = useState<Project | null | undefined>(undefined);
@@ -13,12 +16,30 @@ export default function ProjectView({ id }: { id: string }) {
   const [file, setFile] = useState<File | undefined>(undefined);
   const [now, setNow] = useState(0);
   const [clipInit, setClipInit] = useState<{ start: number; end: number } | undefined>(undefined);
+  const [brand, setBrand] = useState<Brand | null>(null);
+  const [card, setCard] = useState<StyleCard | null>(null);
+  const [activeClip, setActiveClip] = useState<Clip | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const makerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getProject(id).then(setProject).catch((e) => setError(e.message));
     setFile(recallFile(id));
+    loadStyle()
+      .then(({ brand, cards }) => {
+        setBrand(brand);
+        setCard(cards[0] || null);
+      })
+      .catch(() => {});
   }, [id]);
+
+  const captionStyle = card?.fields.captionLook ?? DEFAULT_CAPTION_STYLE;
+
+  function openClip(c: Clip) {
+    setActiveClip(c);
+    setClipInit({ start: c.start_s, end: c.end_s });
+    makerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const url = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
@@ -54,7 +75,7 @@ export default function ProjectView({ id }: { id: string }) {
     <div className="mx-auto max-w-6xl px-6 py-8">
       <Link href="/studio" className="text-sm text-stone-500 hover:text-teal-700">← All projects</Link>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
+        <h1 className="text-3xl font-extrabold text-ink">{project.title}</h1>
         <p className="text-sm text-stone-500">
           {fmtTime(project.duration_s)} · {LANGUAGE_LABEL[project.language] || project.language} · {project.words.length.toLocaleString()} words
         </p>
@@ -84,19 +105,25 @@ export default function ProjectView({ id }: { id: string }) {
               This file looks different from the one you transcribed ({project.source_name}). Clips may not line up.
             </p>
           )}
-          <div className="mt-6 rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Make a clip</h2>
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">AI picks arrive in M4</span>
+          <div className="mt-6">
+            <BriefAndClips project={project} url={url} brand={brand} card={card} captionStyle={captionStyle} onOpen={openClip} />
+          </div>
+          <div ref={makerRef} className="mt-6 scroll-mt-24 rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">{activeClip ? activeClip.title : "Edit and export"}</h2>
+              {activeClip && <span className="shrink-0 rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink">{activeClip.score}</span>}
             </div>
-            <p className="mt-1 mb-5 text-sm text-stone-600">Click a transcript line to start a clip there, preview it in 9:16 and export an MP4 with captions.</p>
+            <p className="mt-1 mb-5 text-sm text-stone-600">
+              {activeClip ? activeClip.reason : "Pick an AI clip above, or click a transcript line to start your own. Preview it in 9:16 and export an MP4 with captions."}
+            </p>
             {file ? (
               <ClipMaker
                 file={file}
                 url={url}
                 words={project.words}
-                title={project.title}
+                title={activeClip?.title || project.title}
                 initial={clipInit}
+                style={captionStyle}
                 getCurrentTime={() => videoRef.current?.currentTime ?? 0}
               />
             ) : (
@@ -105,9 +132,10 @@ export default function ProjectView({ id }: { id: string }) {
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-sand">
-            <h2 className="border-b border-stone-100 px-5 py-3 text-sm font-semibold">Transcript</h2>
+        <div className="space-y-6 lg:col-span-2">
+          <StyleCardPanel compact />
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-sand lg:sticky lg:top-20">
+            <h2 className="border-b border-sand px-5 py-3 text-sm font-semibold">Transcript · click a line to clip from there</h2>
             <ol className="max-h-[560px] overflow-y-auto px-2 py-2 text-sm">
               {project.segments.map(([text, s, e], i) => {
                 const active = now >= s && now < e;

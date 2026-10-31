@@ -21,3 +21,64 @@ export interface Project extends ProjectSummary {
 }
 
 export type NewProject = Omit<Project, "id" | "created_at">;
+
+// ---- M3: brand + style card ----
+export interface Brand {
+  id: string;
+  name: string;
+  sells: string | null;
+  audience: string | null;
+  created_at: string;
+}
+
+export type CopyLanguage = "en" | "hinglish" | "hi";
+
+export interface CaptionLook {
+  fontSize: number;
+  textColor: string;
+  highlightColor: string;
+  position: "lower" | "middle";
+  wordsPerLine: number;
+  uppercase: boolean;
+}
+
+export interface StyleFields {
+  tone: string;
+  hookStyle: string;
+  emojisHashtags: string;
+  language: CopyLanguage;
+  captionLook: CaptionLook;
+}
+
+export interface Rule {
+  id: string;
+  text: string;
+  platform: "all" | "shorts" | "reels";
+  active: boolean;
+  source?: string;
+}
+
+export interface StyleCard {
+  id: string;
+  brand_id: string;
+  version: number;
+  fields: StyleFields;
+  rules: Rule[];
+  change_note: string | null;
+  created_at: string;
+}
+
+// ---- M4: AI clip picks ----
+export interface Clip {
+  id: string;
+  project_id: string;
+  idx: number;
+  start_s: number;
+  end_s: number;
+  title: string;
+  hook: string;
+  reason: string;
+  score: number;
+  outcome?: "great" | "ok" | "poor" | null;
+  created_at?: string;
+}

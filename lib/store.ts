@@ -3,7 +3,7 @@
 // signed-in user's rows; in demo mode it keeps everything in this browser's localStorage.
 import { DEMO_MODE, SUPABASE_READY } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
-import type { NewProject, Project, ProjectSummary } from "@/lib/types";
+import type { Brand, Clip, NewProject, Project, ProjectSummary, Rule, StyleCard, StyleFields } from "@/lib/types";
 
 const LOCAL = DEMO_MODE || !SUPABASE_READY;
 const KEY = "clipwell:projects";
@@ -92,5 +92,105 @@ export async function deleteProject(id: string): Promise<void> {
   }
   const supabase = createClient();
   const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ---------- M3: brand and style cards ----------
+
+function readKey<T>(key: string, fallback: T): T {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeKey(key: string, value: unknown) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+export async function getBrand(): Promise<Brand | null> {
+  if (LOCAL) return readKey<Brand | null>("clipwell:brand", null);
+  const supabase = createClient();
+  const { data, error } = await supabase.from("brands").select("*").order("created_at").limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Brand) || null;
+}
+
+export async function saveBrand(input: { name: string; sells: string; audience: string }): Promise<Brand> {
+  const existing = await getBrand();
+  if (LOCAL) {
+    const row: Brand = existing ? { ...existing, ...input } : { ...input, id: crypto.randomUUID(), created_at: new Date().toISOString() };
+    writeKey("clipwell:brand", row);
+    return row;
+  }
+  const supabase = createClient();
+  const q = existing
+    ? supabase.from("brands").update(input).eq("id", existing.id).select("*").single()
+    : supabase.from("brands").insert(input).select("*").single();
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return data as Brand;
+}
+
+export async function listStyleCards(brandId: string): Promise<StyleCard[]> {
+  if (LOCAL) return readKey<StyleCard[]>("clipwell:stylecards", []).filter((c) => c.brand_id === brandId).sort((a, b) => b.version - a.version);
+  const supabase = createClient();
+  const { data, error } = await supabase.from("style_cards").select("*").eq("brand_id", brandId).order("version", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data || []) as StyleCard[];
+}
+
+export async function addStyleCard(brandId: string, fields: StyleFields, rules: Rule[], changeNote: string): Promise<StyleCard> {
+  const latest = (await listStyleCards(brandId))[0];
+  const version = (latest?.version || 0) + 1;
+  if (LOCAL) {
+    const row: StyleCard = { id: crypto.randomUUID(), brand_id: brandId, version, fields, rules, change_note: changeNote, created_at: new Date().toISOString() };
+    writeKey("clipwell:stylecards", [row, ...readKey<StyleCard[]>("clipwell:stylecards", [])]);
+    return row;
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("style_cards")
+    .insert({ brand_id: brandId, version, fields, rules, change_note: changeNote })
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return data as StyleCard;
+}
+
+// ---------- M4: clips ----------
+export async function listClips(projectId: string): Promise<Clip[]> {
+  if (LOCAL) return readKey<Clip[]>("clipwell:clips", []).filter((c) => c.project_id === projectId).sort((a, b) => a.idx - b.idx);
+  const supabase = createClient();
+  const { data, error } = await supabase.from("clips").select("*").eq("project_id", projectId).order("idx");
+  if (error) throw new Error(error.message);
+  return (data || []) as Clip[];
+}
+
+export async function replaceClips(projectId: string, clips: Omit<Clip, "id" | "project_id">[]): Promise<Clip[]> {
+  if (LOCAL) {
+    const others = readKey<Clip[]>("clipwell:clips", []).filter((c) => c.project_id !== projectId);
+    const rows: Clip[] = clips.map((c) => ({ ...c, id: crypto.randomUUID(), project_id: projectId, created_at: new Date().toISOString() }));
+    writeKey("clipwell:clips", [...others, ...rows]);
+    return rows;
+  }
+  const supabase = createClient();
+  const del = await supabase.from("clips").delete().eq("project_id", projectId);
+  if (del.error) throw new Error(del.error.message);
+  const { data, error } = await supabase
+    .from("clips")
+    .insert(clips.map((c) => ({ ...c, project_id: projectId })))
+    .select("*");
+  if (error) throw new Error(error.message);
+  return ((data || []) as Clip[]).sort((a, b) => a.idx - b.idx);
+}
+
+export async function updateClip(id: string, patch: Partial<Clip>): Promise<void> {
+  if (LOCAL) {
+    writeKey("clipwell:clips", readKey<Clip[]>("clipwell:clips", []).map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    return;
+  }
+  const supabase = createClient();
+  const { error } = await supabase.from("clips").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
 }
