@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import ClipPreview from "@/components/ClipPreview";
 import { buildAss, buildSrt, clipWords, DEFAULT_CAPTION_STYLE, type CaptionStyle } from "@/lib/captions";
-import { downloadBlob, exportClip } from "@/lib/media";
+import { downloadBlob, exportClip, type Framing } from "@/lib/media";
 import { fmtTime } from "@/lib/format";
 import type { Word } from "@/lib/types";
 
@@ -37,6 +37,8 @@ export default function ClipMaker({
   const [progress, setProgress] = useState(0);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [framing, setFraming] = useState<Framing>("center");
+  const effStyle: CaptionStyle = framing === "split" ? { ...style, position: "middle" } : style;
 
   useEffect(() => {
     if (initial) {
@@ -57,7 +59,7 @@ export default function ClipMaker({
     setProgress(0.01);
     try {
       const rel = clipWords(words, start, end);
-      const result = await exportClip(file, start, end, buildAss(rel, style), setProgress);
+      const result = await exportClip(file, start, end, buildAss(rel, effStyle), setProgress, framing);
       const base = `${title.replace(/[^\w\- ]+/g, "").slice(0, 40).trim() || "clip"} ${fmtTime(start).replace(/:/g, "-")}`;
       downloadBlob(result.blob, `${base}.mp4`);
       if (!result.captioned) {
@@ -76,13 +78,34 @@ export default function ClipMaker({
   return (
     <div className="grid gap-6 sm:grid-cols-[minmax(0,240px)_1fr]">
       {valid && start !== null && end !== null ? (
-        <ClipPreview url={url} start={start} end={end} words={words} style={style} className="w-full max-w-[240px]" />
+        <ClipPreview url={url} start={start} end={end} words={words} style={effStyle} framing={framing} className="w-full max-w-[240px]" />
       ) : (
         <div className="flex aspect-[9/16] w-full max-w-[240px] items-center justify-center rounded-2xl bg-stone-100 p-4 text-center text-sm text-stone-500">
           Pick a clip between 5 and 90 seconds long
         </div>
       )}
       <div>
+        <div className="mb-4">
+          <span className="mb-1.5 block text-sm font-medium">Framing</span>
+          <div className="inline-flex rounded-xl bg-cream p-1 ring-1 ring-sand" role="radiogroup" aria-label="Framing">
+            {([
+              ["center", "Centre"],
+              ["left", "Left"],
+              ["right", "Right"],
+              ["split", "Split"],
+            ] as [Framing, string][]).map(([k, label]) => (
+              <button
+                key={k}
+                role="radio"
+                aria-checked={framing === k}
+                onClick={() => setFraming(k)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${framing === k ? "bg-white text-teal-800 shadow-sm ring-1 ring-sand" : "text-stone-600 hover:text-ink"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
             <span className="mb-1 block font-medium">Start</span>

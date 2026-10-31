@@ -128,12 +128,35 @@ export interface ExportResult {
 
 // Cuts [start, end] from the source, crops the centre to 9:16 at 720×1280 and burns in the captions.
 // If burning captions fails, it retries without them so the user still gets an MP4.
+export type Framing = "center" | "left" | "right" | "split";
+
+// Where each speaker sits in a typical two-person 16:9 podcast frame (fraction of width).
+export const SPEAKER_X = { left: 0.27, right: 0.73 };
+
+function framingFilter(framing: Framing): { complex: boolean; graph: string } {
+  const out = "scale=720:1280,setsar=1";
+  if (framing === "split") {
+    // Left half on top, right half below, a thin dark seam where the captions sit.
+    const half = (x: string) => `crop=w=min(iw/2\\,ih*9/8):h=ow*8/9:x=${x}:y=(ih-oh)*0.35,scale=720:640,setsar=1`;
+    return {
+      complex: true,
+      graph: `[0:v]split=2[a][b];[a]${half("0")}[top];[b]${half("iw-ow")}[bot];[top][bot]vstack=inputs=2,drawbox=x=0:y=636:w=720:h=8:color=black@0.85:t=fill`,
+    };
+  }
+  const cx = framing === "left" ? SPEAKER_X.left : framing === "right" ? SPEAKER_X.right : 0.5;
+  return {
+    complex: false,
+    graph: `crop=w=min(iw\\,ih*9/16):h=min(ih\\,iw*16/9):x=max(0\\,min(iw-ow\\,iw*${cx}-ow/2)):y=(ih-oh)/2,${out}`,
+  };
+}
+
 export async function exportClip(
   file: File,
   start: number,
   end: number,
   ass: string | null,
   onProgress?: (fraction: number) => void,
+  framing: Framing = "center",
 ): Promise<ExportResult> {
   const t0 = performance.now();
   const f = await getFFmpeg();
@@ -144,12 +167,15 @@ export async function exportClip(
     if (secs >= 0) onProgress?.(Math.min(0.99, secs / dur));
   };
   f.on("progress", onProg);
-  const crop = "crop=min(iw\\,ih*9/16):min(ih\\,iw*16/9),scale=720:1280,setsar=1";
+  const ff = framingFilter(framing);
   const run = async (withCaptions: boolean) => {
-    const vf = withCaptions ? `${crop},ass=subs.ass:fontsdir=/fonts` : crop;
+    const subs = withCaptions ? ",ass=subs.ass:fontsdir=/fonts" : "";
+    const video = ff.complex
+      ? ["-filter_complex", `${ff.graph}${subs}[v]`, "-map", "[v]", "-map", "0:a?"]
+      : ["-vf", `${ff.graph}${subs}`];
     return f.exec([
       "-ss", start.toFixed(2), "-i", path, "-t", dur.toFixed(2),
-      "-vf", vf, "-r", "30",
+      ...video, "-r", "30",
       "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
       "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
       "-y", "out.mp4",
