@@ -10,7 +10,7 @@ export default function SignInButton() {
     return (
       <a
         href="/studio"
-        className="btn-press inline-flex items-center gap-2 rounded-xl bg-teal-700 px-6 py-3.5 font-semibold text-white shadow-[0_10px_24px_-12px_rgba(15,118,110,.8)] hover:bg-teal-800"
+        className="btn-press inline-flex items-center gap-2 rounded-full bg-teal-700 px-6 py-3.5 font-semibold text-white shadow-[0_10px_24px_-12px_rgba(15,118,110,.8)] hover:bg-teal-800"
       >
         Open the studio (demo mode)
       </a>
@@ -30,7 +30,7 @@ export default function SignInButton() {
     <button
       onClick={signIn}
       disabled={busy}
-      className="inline-flex items-center gap-3 rounded-xl bg-white px-5 py-3 font-medium text-stone-800 shadow-sm ring-1 ring-sand hover:bg-stone-50 disabled:opacity-60"
+      className="inline-flex items-center gap-3 rounded-full bg-white px-6 py-3.5 font-medium text-stone-800 shadow-[0_12px_28px_-16px_rgba(16,60,56,.6)] hover:bg-stone-50 disabled:opacity-60"
     >
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
         <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z" />

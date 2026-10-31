@@ -48,6 +48,7 @@ export interface StyleFields {
   emojisHashtags: string;
   language: CopyLanguage;
   captionLook: CaptionLook;
+  learnings?: string[]; // M7: what worked / flopped, from logged results
 }
 
 export interface Rule {
@@ -105,4 +106,13 @@ export interface CopyVersion {
   instruction: string | null;
   made_rule: boolean;
   created_at: string;
+}
+
+// M7: content calendar
+export interface PlanSlot {
+  id: string;
+  clip_id: string;
+  platform: Platform;
+  day: string; // YYYY-MM-DD
+  created_at?: string;
 }

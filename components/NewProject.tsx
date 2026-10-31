@@ -5,6 +5,8 @@ import { extractAudioChunks, getDuration, getFFmpeg, rememberFile } from "@/lib/
 import { createProject } from "@/lib/store";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
+import { YT_PREFIX, youtubeId } from "@/lib/youtube";
+import { IconBrandYoutube, IconUpload } from "@tabler/icons-react";
 
 const MAX_MINUTES = 60;
 
@@ -34,6 +36,9 @@ async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLangu
 
 export default function NewProject() {
   const router = useRouter();
+  const [mode, setMode] = useState<"youtube" | "file">("youtube");
+  const [link, setLink] = useState("");
+  const ytId = youtubeId(link);
   const [file, setFile] = useState<File | null>(null);
   const [duration, setDuration] = useState(0);
   const [title, setTitle] = useState("");
@@ -55,6 +60,35 @@ export default function NewProject() {
       setTitle(f.name.replace(/\.[^.]+$/, ""));
     } catch (e) {
       setError((e as Error).message);
+    }
+  }
+
+  async function startYoutube() {
+    if (!ytId) return;
+    setBusy(true);
+    setError("");
+    setProgress(0.3);
+    setStage("Reading the video's captions from YouTube");
+    try {
+      const res = await fetch("/api/youtube", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: link, lang }) });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `YouTube import failed (HTTP ${res.status})`);
+      setProgress(0.8);
+      setStage("Saving the project");
+      const project = await createProject({
+        title: title || json.title,
+        duration_s: Math.round(json.duration_s),
+        language: lang,
+        words: json.words,
+        segments: json.segments,
+        source_name: `${YT_PREFIX}${json.id}`,
+        source_size: null,
+      });
+      setProgress(1);
+      router.push(`/studio/p/${project.id}`);
+    } catch (e) {
+      setError((e as Error).message || "Something went wrong.");
+      setBusy(false);
     }
   }
 
@@ -123,13 +157,74 @@ export default function NewProject() {
   }
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
+    <div className="surface p-6">
       <h2 className="text-lg font-semibold">New project</h2>
       <p className="mt-1 text-sm text-stone-600">
-        Upload a podcast or long video (MP4, up to 45 min). It stays on your laptop; only the audio is sent for transcription.
+        Paste a YouTube link, or upload a podcast (MP4, up to 45 min). Uploads stay on your laptop; only the audio is sent for transcription.
       </p>
 
-      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-sand px-6 py-8 text-center hover:border-marigold hover:bg-marigold-soft/60">
+      <div role="tablist" aria-label="Source" className="seg mt-5 inline-flex">
+        {([["youtube", "YouTube link", IconBrandYoutube], ["file", "Upload a file", IconUpload]] as const).map(([k, label, Icon]) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={mode === k}
+            disabled={busy}
+            onClick={() => setMode(k)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium ${mode === k ? "seg-on text-teal-800" : "text-stone-600 hover:text-ink"}`}
+          >
+            <Icon size={16} stroke={1.8} aria-hidden="true" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "youtube" && (
+        <div className="mt-4">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">YouTube link</span>
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              disabled={busy}
+              placeholder="https://www.youtube.com/watch?v=…"
+              className="field w-full px-3.5 py-2.5"
+            />
+          </label>
+          {link && !ytId && <p className="mt-2 text-sm text-amber-800">That doesn&apos;t look like a YouTube video link yet.</p>}
+          {ytId && (
+            <div className="mt-4 overflow-hidden rounded-[22px] bg-black shadow-[0_20px_40px_-24px_rgba(16,60,56,.6)]">
+              <iframe
+                className="aspect-video w-full"
+                src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0`}
+                title="YouTube preview"
+                allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+          {ytId && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="text-sm">
+                <span className="mb-1 block font-medium">Project title (optional)</span>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} placeholder="Uses the video title" className="field w-full px-3.5 py-2.5" />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block font-medium">Spoken language</span>
+                <select value={lang} onChange={(e) => setLang(e.target.value as TranscriptLanguage)} disabled={busy} className="field w-full px-3.5 py-2.5">
+                  {(["hinglish", "en", "hi", "auto"] as TranscriptLanguage[]).map((l) => (
+                    <option key={l} value={l}>
+                      {LANGUAGE_LABEL[l]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === "file" && (
+      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-teal-700/25 bg-white/50 px-6 py-8 text-center hover:border-marigold hover:bg-marigold-soft/60">
         <input
           type="file"
           accept="video/*"
@@ -152,7 +247,9 @@ export default function NewProject() {
         )}
       </label>
 
-      {file && (
+      )}
+
+      {mode === "file" && file && (
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="text-sm">
             <span className="mb-1 block font-medium">Project title</span>
@@ -160,7 +257,7 @@ export default function NewProject() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={busy}
-              className="w-full rounded-lg border border-sand px-3 py-2"
+              className="field w-full px-3.5 py-2.5"
             />
           </label>
           <label className="text-sm">
@@ -169,7 +266,7 @@ export default function NewProject() {
               value={lang}
               onChange={(e) => setLang(e.target.value as TranscriptLanguage)}
               disabled={busy}
-              className="w-full rounded-lg border border-sand px-3 py-2"
+              className="field w-full px-3.5 py-2.5"
             >
               {(["hinglish", "en", "hi", "auto"] as TranscriptLanguage[]).map((l) => (
                 <option key={l} value={l}>
@@ -192,11 +289,11 @@ export default function NewProject() {
       {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <button
-        onClick={start}
-        disabled={!file || busy}
-        className="mt-5 w-full btn-press rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+        onClick={mode === "youtube" ? startYoutube : start}
+        disabled={busy || (mode === "youtube" ? !ytId : !file)}
+        className="mt-5 w-full btn-press rounded-full bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
       >
-        {busy ? "Working…" : "Transcribe video"}
+        {busy ? "Working…" : mode === "youtube" ? "Get transcript from YouTube" : "Transcribe video"}
       </button>
     </div>
   );

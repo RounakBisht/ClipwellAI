@@ -9,3 +9,7 @@ export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 export const SUPABASE_READY = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+// Credits shown on the landing page
+export const WISPR_URL = "https://wisprflow.ai";
+export const PRODUCT_SPACE_URL = process.env.NEXT_PUBLIC_PRODUCT_SPACE_URL || "https://www.linkedin.com/search/results/all/?keywords=Product%20Space";

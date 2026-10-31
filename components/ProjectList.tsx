@@ -20,7 +20,7 @@ export default function ProjectList() {
   }
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
+    <div className="surface p-6">
       <h2 className="text-lg font-semibold">Your projects</h2>
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       {!rows && !error && <p className="mt-3 text-sm text-stone-500">Loading…</p>}

@@ -159,22 +159,22 @@ export default function CopyPanel({
   }
 
   return (
-    <div className="mt-8 border-t border-sand pt-6">
+    <div className="mt-8 border-t border-ink/8 pt-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold text-ink">Copy for this clip</h3>
         <div className="flex items-center gap-2">
-          <select value={language} onChange={(e) => setLanguage(e.target.value as CopyLanguage)} aria-label="Copy language" className="rounded-lg border border-sand px-2 py-1.5 text-sm">
+          <select value={language} onChange={(e) => setLanguage(e.target.value as CopyLanguage)} aria-label="Copy language" className="field px-3 py-2 text-sm">
             {(["hinglish", "en", "hi"] as CopyLanguage[]).map((l) => <option key={l} value={l}>{LANGUAGE_LABEL[l]}</option>)}
           </select>
-          <button onClick={write} disabled={Boolean(busy)} className="btn-press rounded-lg bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
+          <button onClick={write} disabled={Boolean(busy)} className="btn-press rounded-full bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
             {busy === "write" ? "Writing…" : latest ? `Rewrite in ${LANGUAGE_LABEL[language].split(" ")[0]}` : "Write Shorts + Reels copy"}
           </button>
         </div>
       </div>
 
-      <div className="mt-4 inline-flex rounded-xl bg-cream p-1 ring-1 ring-sand" role="tablist">
+      <div className="mt-4 seg inline-flex" role="tablist">
         {(["reels", "shorts"] as Platform[]).map((p) => (
-          <button key={p} role="tab" aria-selected={platform === p} onClick={() => setPlatform(p)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${platform === p ? "bg-white text-teal-800 shadow-sm ring-1 ring-sand" : "text-stone-600"}`}>
+          <button key={p} role="tab" aria-selected={platform === p} onClick={() => setPlatform(p)} className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${platform === p ? "seg-on text-teal-800" : "text-stone-600"}`}>
             {PLATFORM_LABEL[p]}
           </button>
         ))}
@@ -188,7 +188,7 @@ export default function CopyPanel({
                 key={v.id}
                 onClick={() => setViewing((s) => ({ ...s, [platform]: v.version }))}
                 title={v.instruction || ""}
-                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${v.id === shown.id ? "bg-ink text-white" : "bg-white text-stone-600 ring-1 ring-sand hover:bg-cream"}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${v.id === shown.id ? "bg-ink text-white" : "chip-soft text-stone-600 hover:bg-cream"}`}
               >
                 v{v.version}
                 {v.made_rule ? " ★" : ""}
@@ -201,7 +201,7 @@ export default function CopyPanel({
             )}
           </div>
           {shown.instruction && <p className="mt-2 text-xs text-stone-500">v{shown.version}: {shown.instruction}</p>}
-          <div className="relative mt-2 rounded-2xl bg-cream/70 p-4 text-sm ring-1 ring-sand">
+          <div className="relative mt-2 surface-tint p-4 text-sm">
             {shown.platform === "shorts" ? (
               <>
                 <p className="font-bold text-ink">{(shown.content as ShortsCopy).title}</p>
@@ -215,18 +215,18 @@ export default function CopyPanel({
                 <p className="mt-2 text-teal-700">{((shown.content as ReelsCopy).hashtags || []).join(" ")}</p>
               </>
             )}
-            <button onClick={copy} className="absolute top-3 right-3 rounded-md bg-white px-2 py-1 text-xs font-semibold text-stone-600 ring-1 ring-sand hover:bg-cream">
+            <button onClick={copy} className="absolute top-3 right-3 rounded-full chip-soft px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-white">
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-sand">
+          <div className="mt-4 surface-tint p-4">
             <label className="block text-sm">
               <span className="mb-1 flex items-center gap-2 font-medium">
                 Tell it what to change
-                <span className="rounded-full bg-cream px-2 py-0.5 text-xs font-normal text-stone-600 ring-1 ring-sand">Speak it with Wispr</span>
+                <span className="rounded-full bg-marigold-soft px-2.5 py-0.5 text-xs font-medium text-marigold-deep">Speak it with Wispr</span>
               </span>
-              <textarea rows={2} value={edit} onChange={(e) => setEdit(e.target.value)} placeholder="e.g. Too salesy, drop the emojis, uh, max two hashtags" className="w-full rounded-xl border border-sand px-3 py-2" />
+              <textarea rows={2} value={edit} onChange={(e) => setEdit(e.target.value)} placeholder="e.g. Too salesy, drop the emojis, uh, max two hashtags" className="field w-full px-3.5 py-2.5" />
             </label>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <label className="flex items-center gap-2 text-sm text-stone-700">
@@ -234,7 +234,7 @@ export default function CopyPanel({
                 Make this a rule for all future copy
                 {!card && <span className="text-xs text-stone-500">(set up a style card first)</span>}
               </label>
-              <button onClick={applyEdit} disabled={Boolean(busy) || !edit.trim()} className="btn-press rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
+              <button onClick={applyEdit} disabled={Boolean(busy) || !edit.trim()} className="btn-press rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
                 {busy === "edit" ? "Applying…" : "Apply edit"}
               </button>
             </div>

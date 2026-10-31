@@ -14,7 +14,7 @@ export default async function StudioHeader() {
     email = user?.email ?? null;
   }
   return (
-    <header className="sticky top-0 z-20 border-b border-sand bg-cream/85 backdrop-blur">
+    <header className="sticky top-0 z-20 bg-white/55 shadow-[inset_0_-1px_0_rgba(255,255,255,.7),0_10px_30px_-24px_rgba(16,60,56,.45)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" aria-label="ClipwellAI home">
           <Logo size={28} suffix="Studio" />
@@ -27,7 +27,7 @@ export default async function StudioHeader() {
             <>
               <span>{email}</span>
               <form action="/auth/signout" method="post">
-                <button className="rounded-lg px-3 py-1.5 ring-1 ring-sand hover:bg-stone-50">Sign out</button>
+                <button className="rounded-full bg-ink/5 px-3 py-1.5 hover:bg-ink/10">Sign out</button>
               </form>
             </>
           )}

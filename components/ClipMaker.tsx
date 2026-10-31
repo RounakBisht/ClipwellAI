@@ -89,7 +89,7 @@ export default function ClipMaker({
       <div>
         <div className="mb-4">
           <span className="mb-1.5 block text-sm font-medium">Framing</span>
-          <div className="inline-flex rounded-xl bg-cream p-1 ring-1 ring-sand" role="radiogroup" aria-label="Framing">
+          <div className="seg inline-flex" role="radiogroup" aria-label="Framing">
             {([
               ["center", "Centre"],
               ["left", "Left"],
@@ -101,7 +101,7 @@ export default function ClipMaker({
                 role="radio"
                 aria-checked={framing === k}
                 onClick={() => setFraming(k)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${framing === k ? "bg-white text-teal-800 shadow-sm ring-1 ring-sand" : "text-stone-600 hover:text-ink"}`}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${framing === k ? "seg-on text-teal-800" : "text-stone-600 hover:text-ink"}`}
               >
                 {label}
               </button>
@@ -112,8 +112,8 @@ export default function ClipMaker({
           <label className="text-sm">
             <span className="mb-1 block font-medium">Start</span>
             <div className="flex gap-2">
-              <input value={startText} onChange={(e) => setStartText(e.target.value)} className="w-full rounded-lg border border-sand px-3 py-2 font-mono" />
-              <button onClick={() => setStartText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-sand hover:bg-stone-50">
+              <input value={startText} onChange={(e) => setStartText(e.target.value)} className="field w-full px-3.5 py-2.5 font-mono" />
+              <button onClick={() => setStartText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-full bg-ink/5 px-3 text-xs font-medium hover:bg-ink/10">
                 Now
               </button>
             </div>
@@ -121,8 +121,8 @@ export default function ClipMaker({
           <label className="text-sm">
             <span className="mb-1 block font-medium">End</span>
             <div className="flex gap-2">
-              <input value={endText} onChange={(e) => setEndText(e.target.value)} className="w-full rounded-lg border border-sand px-3 py-2 font-mono" />
-              <button onClick={() => setEndText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-lg px-2 text-xs ring-1 ring-sand hover:bg-stone-50">
+              <input value={endText} onChange={(e) => setEndText(e.target.value)} className="field w-full px-3.5 py-2.5 font-mono" />
+              <button onClick={() => setEndText(fmtTime(getCurrentTime()))} className="shrink-0 rounded-full bg-ink/5 px-3 text-xs font-medium hover:bg-ink/10">
                 Now
               </button>
             </div>
@@ -150,7 +150,7 @@ export default function ClipMaker({
         <button
           onClick={doExport}
           disabled={!valid || busy}
-          className="mt-4 w-full btn-press rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+          className="mt-4 w-full btn-press rounded-full bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
         >
           {busy ? "Exporting…" : "Export MP4 (9:16, captions burned in)"}
         </button>

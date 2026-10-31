@@ -17,7 +17,7 @@ export default function Logo({ size = 32, suffix }: { size?: number; suffix?: st
   return (
     <span className="inline-flex items-center gap-2">
       <LogoMark size={size} />
-      <span className="font-display text-xl font-extrabold tracking-tight text-ink">
+      <span className="font-display text-xl font-bold tracking-tight text-ink">
         {base}
         {ai && <span className="text-teal-700">AI</span>}
         {suffix && <span className="ml-1.5 font-semibold text-stone-500">{suffix}</span>}

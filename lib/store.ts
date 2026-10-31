@@ -3,7 +3,7 @@
 // signed-in user's rows; in demo mode it keeps everything in this browser's localStorage.
 import { DEMO_MODE, SUPABASE_READY } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
-import type { Brand, Clip, CopyVersion, NewProject, Platform, Project, ProjectSummary, Rule, StyleCard, StyleFields } from "@/lib/types";
+import type { Brand, Clip, CopyVersion, NewProject, PlanSlot, Platform, Project, ProjectSummary, Rule, StyleCard, StyleFields } from "@/lib/types";
 
 const LOCAL = DEMO_MODE || !SUPABASE_READY;
 const KEY = "clipwell:projects";
@@ -216,6 +216,34 @@ export async function addCopyVersion(input: Omit<CopyVersion, "id" | "version" |
   const { data, error } = await supabase.from("copy_versions").insert({ ...input, version }).select("*").single();
   if (error) throw new Error(error.message);
   return data as CopyVersion;
+}
+
+// ---------- M7: content calendar ----------
+export async function listPlanSlots(clipIds: string[]): Promise<PlanSlot[]> {
+  if (!clipIds.length) return [];
+  if (LOCAL) return readKey<PlanSlot[]>("clipwell:plan", []).filter((s) => clipIds.includes(s.clip_id)).sort((a, b) => a.day.localeCompare(b.day));
+  const supabase = createClient();
+  const { data, error } = await supabase.from("plan_slots").select("*").in("clip_id", clipIds).order("day");
+  if (error) throw new Error(error.message);
+  return (data || []) as PlanSlot[];
+}
+
+export async function replacePlanSlots(clipIds: string[], rows: Omit<PlanSlot, "id">[]): Promise<PlanSlot[]> {
+  if (LOCAL) {
+    const others = readKey<PlanSlot[]>("clipwell:plan", []).filter((s) => !clipIds.includes(s.clip_id));
+    const made = rows.map((r) => ({ ...r, id: crypto.randomUUID() }));
+    writeKey("clipwell:plan", [...others, ...made]);
+    return made;
+  }
+  const supabase = createClient();
+  if (clipIds.length) {
+    const del = await supabase.from("plan_slots").delete().in("clip_id", clipIds);
+    if (del.error) throw new Error(del.error.message);
+  }
+  if (!rows.length) return [];
+  const { data, error } = await supabase.from("plan_slots").insert(rows).select("*");
+  if (error) throw new Error(error.message);
+  return ((data || []) as PlanSlot[]).sort((a, b) => a.day.localeCompare(b.day));
 }
 
 export type { Platform };

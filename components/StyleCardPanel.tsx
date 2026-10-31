@@ -68,7 +68,7 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
     setCards([card, ...cards]);
   }
 
-  const shell = "rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand";
+  const shell = "surface p-6";
   if (cards === null) return <div className={shell}><p className="text-sm text-stone-500">{error || "Loading style card…"}</p></div>;
 
   const card = cards[0];
@@ -78,30 +78,30 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
         <h2 className="text-lg font-semibold">Set up your style card</h2>
         <p className="mt-1 text-sm text-stone-600">One minute, once. Every clip and caption follows it, and it learns from your edits.</p>
         <div className="mt-4 space-y-3 text-sm">
-          <label className="block text-sm"><span className="mb-1 block font-medium">Brand name</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. IFFCO Urban Gardens" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-          <label className="block text-sm"><span className="mb-1 block font-medium">What you sell</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. potting mix and plant food" value={form.sells} onChange={(e) => setForm({ ...form, sells: e.target.value })} /></label>
-          <label className="block text-sm"><span className="mb-1 block font-medium">Audience</span><input className="w-full rounded-lg border border-sand px-3 py-2" placeholder="e.g. new plant parents in metros" value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })} /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Brand name</span><input className="field w-full px-3.5 py-2.5" placeholder="e.g. IFFCO Urban Gardens" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">What you sell</span><input className="field w-full px-3.5 py-2.5" placeholder="e.g. potting mix and plant food" value={form.sells} onChange={(e) => setForm({ ...form, sells: e.target.value })} /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Audience</span><input className="field w-full px-3.5 py-2.5" placeholder="e.g. new plant parents in metros" value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })} /></label>
           <div className="grid grid-cols-2 gap-3">
             <label>
               <span className="mb-1 block font-medium">Tone</span>
-              <select className="w-full rounded-lg border border-sand px-3 py-2" value={form.tonePreset} onChange={(e) => setForm({ ...form, tonePreset: e.target.value })}>
+              <select className="field w-full px-3.5 py-2.5" value={form.tonePreset} onChange={(e) => setForm({ ...form, tonePreset: e.target.value })}>
                 {PRESETS.map((p) => <option key={p}>{p}</option>)}
               </select>
             </label>
             <label>
               <span className="mb-1 block font-medium">Language</span>
-              <select className="w-full rounded-lg border border-sand px-3 py-2" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as CopyLanguage })}>
+              <select className="field w-full px-3.5 py-2.5" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as CopyLanguage })}>
                 {(["hinglish", "en", "hi"] as CopyLanguage[]).map((l) => <option key={l} value={l}>{LANGUAGE_LABEL[l]}</option>)}
               </select>
             </label>
           </div>
           <label className="block">
             <span className="mb-1 block font-medium">Optional: paste 1 to 3 captions from past Reels you liked</span>
-            <textarea rows={3} className="w-full rounded-lg border border-sand px-3 py-2" placeholder="The AI reads these to match your voice from day one." value={form.seedCaptions} onChange={(e) => setForm({ ...form, seedCaptions: e.target.value })} />
+            <textarea rows={3} className="field w-full px-3.5 py-2.5" placeholder="The AI reads these to match your voice from day one." value={form.seedCaptions} onChange={(e) => setForm({ ...form, seedCaptions: e.target.value })} />
           </label>
         </div>
         {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        <button onClick={create} disabled={busy} className="btn-press mt-4 w-full rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
+        <button onClick={create} disabled={busy} className="btn-press mt-4 w-full rounded-full bg-teal-700 px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
           {busy ? "Building your style card…" : "Create style card"}
         </button>
       </div>
@@ -126,7 +126,7 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
         </button>
       </div>
       <p className="mt-0.5 text-xs text-stone-500">{brand?.name}</p>
-      <dl className="mt-3 divide-y divide-sand text-sm">
+      <dl className="mt-3 divide-y divide-ink/8 text-sm">
         {rows.map(([k, label, v]) => (
           <div key={k} className="flex justify-between gap-4 py-2">
             <dt className="shrink-0 text-stone-500">{label}</dt>
@@ -135,7 +135,7 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
         ))}
         <div className="flex items-center justify-between gap-4 py-2">
           <dt className="text-stone-500">Caption look</dt>
-          <dd className="rounded-md bg-ink px-2 py-0.5 font-display text-sm font-extrabold text-white">
+          <dd className="rounded-md bg-ink px-2 py-0.5 font-caption text-sm font-extrabold text-white">
             word <span style={{ color: f.captionLook.highlightColor }}>by</span> word
           </dd>
         </div>
@@ -161,7 +161,7 @@ export default function StyleCardPanel({ compact = false, refreshKey = 0 }: { co
         </div>
       )}
       {showHistory && (
-        <ol className="mt-4 space-y-1 border-t border-sand pt-3 text-xs text-stone-600">
+        <ol className="mt-4 space-y-1 border-t border-ink/8 pt-3 text-xs text-stone-600">
           {cards.map((c) => (
             <li key={c.id}>
               <span className="font-semibold">v{c.version}</span> · {c.change_note || "Updated"}

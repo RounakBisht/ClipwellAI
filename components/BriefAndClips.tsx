@@ -88,7 +88,7 @@ export default function BriefAndClips({
   }
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-[0_1px_0_#f1e4cc,0_12px_30px_-20px_rgba(23,38,42,.25)] ring-1 ring-sand">
+    <div className="surface p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Brief and AI clips</h2>
         {card ? (
@@ -100,24 +100,24 @@ export default function BriefAndClips({
       <label className="mt-4 block text-sm">
         <span className="mb-1 flex items-center gap-2 font-medium">
           Your brief
-          <span className="rounded-full bg-cream px-2 py-0.5 text-xs font-normal text-stone-600 ring-1 ring-sand">Speak it with Wispr</span>
+          <span className="rounded-full bg-marigold-soft px-2.5 py-0.5 text-xs font-medium text-marigold-deep">Speak it with Wispr</span>
         </span>
         <textarea
           rows={3}
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
           placeholder="e.g. Clips for new plant parents, uh, keep it fun, no wait, practical. Avoid anything too technical."
-          className="w-full rounded-xl border border-sand px-3 py-2"
+          className="field w-full px-3.5 py-2.5"
         />
       </label>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <label className="text-sm">
           <span className="mr-2 text-stone-600">Clips</span>
-          <select value={count} onChange={(e) => setCount(Number(e.target.value))} className="rounded-lg border border-sand px-2 py-1.5">
+          <select value={count} onChange={(e) => setCount(Number(e.target.value))} className="field px-3 py-2">
             {[3, 4, 5].map((n) => <option key={n}>{n}</option>)}
           </select>
         </label>
-        <button onClick={find} disabled={busy} className="btn-press flex-1 rounded-xl bg-teal-700 px-5 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
+        <button onClick={find} disabled={busy} className="btn-press flex-1 rounded-full bg-teal-700 px-5 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-50">
           {busy ? "Reading the whole transcript…" : clips?.length ? "Find clips again" : "Find clips"}
         </button>
       </div>
@@ -126,12 +126,18 @@ export default function BriefAndClips({
       {clips && clips.length > 0 && (
         <div className="mt-6 grid gap-4">
           {clips.map((c, i) => (
-            <div key={c.id} className="animate-rise flex gap-4 rounded-2xl bg-cream/60 p-3 ring-1 ring-sand" style={{ animationDelay: `${i * 90}ms` }}>
+            <div key={c.id} className="animate-rise lift surface-tint flex gap-4 p-3" style={{ animationDelay: `${i * 90}ms` }}>
               <div className="w-[130px] shrink-0">
                 {url ? (
                   <ClipPreview url={url} start={c.start_s} end={c.end_s} words={project.words} style={captionStyle} className="w-full" />
+                ) : project.source_name?.startsWith("youtube:") ? (
+                  <div className="relative aspect-[9/16] overflow-hidden rounded-2xl bg-ink">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`https://i.ytimg.com/vi/${project.source_name.slice(8)}/hqdefault.jpg`} alt="" className="h-full w-full object-cover opacity-90" />
+                    <span className="absolute inset-x-1 bottom-2 text-center font-caption text-[13px] leading-tight font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.8)]">{c.hook}</span>
+                  </div>
                 ) : (
-                  <div className="flex aspect-[9/16] items-center justify-center rounded-2xl bg-stone-200 p-2 text-center text-xs text-stone-500">Select the video to preview</div>
+                  <div className="flex aspect-[9/16] items-center justify-center rounded-2xl bg-ink/5 p-2 text-center text-xs text-stone-600">Select the video to preview</div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -147,7 +153,7 @@ export default function BriefAndClips({
                   <span className="font-semibold text-stone-500">Why: </span>
                   {c.reason}
                 </p>
-                <button onClick={() => onOpen(c)} className="btn-press mt-3 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-teal-800 ring-1 ring-sand hover:bg-teal-50">
+                <button onClick={() => onOpen(c)} className="btn-press mt-3 rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-800">
                   Edit and export
                 </button>
               </div>
