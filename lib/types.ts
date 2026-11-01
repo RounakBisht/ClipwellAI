@@ -13,6 +13,7 @@ export interface ProjectSummary {
 }
 
 export interface Project extends ProjectSummary {
+  brand_id?: string | null;
   words: Word[];
   segments: Segment[];
   brief?: string | null;

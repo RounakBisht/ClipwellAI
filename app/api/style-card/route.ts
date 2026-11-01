@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth-server";
 import { claudeJson, ClaudeError, VOICE_NOTE } from "@/lib/claude";
+import { readJson } from "@/lib/copy-prompts";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,14 +10,16 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const denied = await requireUser();
   if (denied) return denied;
-  const body = (await req.json()) as {
+  const body = await readJson<{
     name: string;
     sells: string;
     audience: string;
     tonePreset: string;
     seedCaptions: string;
     language: string;
-  };
+  }>(req, 50_000);
+  if (!body || !String(body.name || "").trim()) return NextResponse.json({ error: "Bad request." }, { status: 400 });
+  for (const k of ["name", "sells", "audience", "tonePreset", "language"] as const) body[k] = String(body[k] || "").slice(0, 200);
   const system =
     "You are a brand voice strategist for Indian D2C brands making YouTube Shorts and Instagram Reels. You write short, specific, usable style rules. Reply with JSON only.";
   const user = `${VOICE_NOTE}
@@ -37,7 +40,13 @@ Return exactly:
   try {
     const out = await claudeJson<{ tone: string; hookStyle: string; emojisHashtags: string; highlightColor: string }>(system, user, 600);
     const hex = /^#[0-9a-f]{6}$/i.test(out.highlightColor || "") ? out.highlightColor : "#FFC23D";
-    return NextResponse.json({ tone: out.tone, hookStyle: out.hookStyle, emojisHashtags: out.emojisHashtags, highlightColor: hex });
+    const s = (x: unknown, d: string) => (typeof x === "string" && x.trim() ? x.trim().slice(0, 200) : d);
+    return NextResponse.json({
+      tone: s(out.tone, "Warm, clear and practical"),
+      hookStyle: s(out.hookStyle, "Open with a surprising question"),
+      emojisHashtags: s(out.emojisHashtags, "Max 1 emoji; 3 hashtags on Reels, 2 on Shorts"),
+      highlightColor: hex,
+    });
   } catch (e) {
     const status = e instanceof ClaudeError ? e.status : 502;
     return NextResponse.json({ error: (e as Error).message }, { status });

@@ -22,7 +22,10 @@ export default async function StudioHeader() {
         <div className="flex min-w-0 items-center gap-2 text-sm whitespace-nowrap text-stone-600 sm:gap-4">
           <Link href="/studio" className="font-medium text-teal-800 hover:text-teal-900">Projects</Link>
           {demo ? (
-            <span className="hidden rounded-full bg-amber-100 px-3 py-1 text-amber-800 sm:inline">Demo mode · data stays in this browser</span>
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+              <span className="sm:hidden">Demo · saved here</span>
+              <span className="hidden sm:inline">Demo mode · data stays in this browser</span>
+            </span>
           ) : (
             <>
               <span className="hidden max-w-[220px] truncate md:inline" title={email || ""}>{email}</span>

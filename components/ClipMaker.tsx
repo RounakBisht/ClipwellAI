@@ -7,8 +7,10 @@ import { fmtTime } from "@/lib/format";
 import type { Word } from "@/lib/types";
 
 function parseTime(s: string): number | null {
-  const parts = s.trim().split(":").map(Number);
-  if (parts.some((n) => Number.isNaN(n))) return null;
+  const t = s.trim();
+  if (!t || !/^\d+(:\d{1,2}){0,2}(\.\d+)?$/.test(t)) return null;
+  const parts = t.split(":").map(Number);
+  if (parts.some((n) => Number.isNaN(n) || n < 0)) return null;
   return parts.reduce((acc, n) => acc * 60 + n, 0);
 }
 
@@ -22,6 +24,7 @@ export default function ClipMaker({
   getCurrentTime,
   initial,
   style = DEFAULT_CAPTION_STYLE,
+  duration,
 }: {
   file: File;
   url: string;
@@ -30,6 +33,7 @@ export default function ClipMaker({
   getCurrentTime: () => number;
   initial?: { start: number; end: number };
   style?: CaptionStyle;
+  duration?: number;
 }) {
   const [startText, setStartText] = useState(fmtTime(initial?.start ?? 0));
   const [endText, setEndText] = useState(fmtTime(initial?.end ?? 30));
@@ -50,7 +54,8 @@ export default function ClipMaker({
 
   const start = parseTime(startText);
   const end = parseTime(endText);
-  const valid = start !== null && end !== null && end - start >= 5 && end - start <= 90;
+  const pastEnd = Boolean(duration && end !== null && end > duration + 0.5);
+  const valid = start !== null && end !== null && end - start >= 5 && end - start <= 90 && !pastEnd;
 
   async function doExport() {
     if (!valid || start === null || end === null) return;
@@ -131,6 +136,8 @@ export default function ClipMaker({
         <p className="mt-2 text-xs text-stone-500">
           Play the video above and press &ldquo;Now&rdquo; to mark the start and end, or type times like 12:05.
           {start !== null && end !== null && end > start && ` Length: ${Math.round(end - start)} s.`}
+          {pastEnd && duration ? <span className="mt-1 block text-amber-800">The video ends at {fmtTime(duration)}. Pick an end time before that.</span> : null}
+          {start !== null && end !== null && end - start > 90 && <span className="mt-1 block text-amber-800">Clips can be up to 90 s long.</span>}
         </p>
 
         {busy && (

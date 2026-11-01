@@ -31,3 +31,50 @@ export const SHAPE: Record<string, string> = {
 
 export const SYSTEM =
   "You are the social media copywriter for an Indian D2C brand. You write YouTube Shorts and Instagram Reels copy that sounds like the brand, not like AI. You follow the brand's rules exactly. Reply with JSON only.";
+
+// ---- Reply hygiene: AI replies are normalised to the exact shape the UI renders ----
+const str = (x: unknown, max = 2000) => (typeof x === "string" ? x : x == null ? "" : String(x)).trim().slice(0, max);
+export function hashtagList(h: unknown): string[] {
+  const raw = Array.isArray(h) ? h.map((x) => str(x, 60)) : str(h, 600).split(/[\s,]+/);
+  return raw
+    .filter(Boolean)
+    .map((t) => (t.startsWith("#") ? t : `#${t}`))
+    .slice(0, 12);
+}
+
+// Returns null when the reply has no usable main text.
+export function normalizeCopy(platform: "shorts" | "reels", raw: unknown): Record<string, unknown> | null {
+  const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  if (platform === "reels") {
+    const caption = str(o.caption);
+    if (!caption) return null;
+    return { caption, hashtags: hashtagList(o.hashtags), coverText: str(o.coverText, 80) };
+  }
+  const title = str(o.title, 200);
+  if (!title) return null;
+  return { title, description: str(o.description), hashtags: hashtagList(o.hashtags) };
+}
+
+export const COPY_SCHEMA: Record<string, object> = {
+  shorts: {
+    type: "object",
+    properties: { title: { type: "string" }, description: { type: "string" }, hashtags: { type: "array", items: { type: "string" } } },
+    required: ["title", "description", "hashtags"],
+  },
+  reels: {
+    type: "object",
+    properties: { caption: { type: "string" }, hashtags: { type: "array", items: { type: "string" } }, coverText: { type: "string" } },
+    required: ["caption", "hashtags", "coverText"],
+  },
+};
+
+// Bad or oversized request bodies get a clear 400 instead of a crash.
+export async function readJson<T>(req: Request, maxBytes = 1_000_000): Promise<T | null> {
+  try {
+    const text = await req.text();
+    if (!text || text.length > maxBytes) return null;
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   }
   if (!res || !res.ok) {
     const detail = res ? await res.text() : "no response";
-    return NextResponse.json({ error: `Transcription failed (${res?.status}).`, detail: detail.slice(0, 500) }, { status: 502 });
+    return NextResponse.json({ error: `Transcription failed (${res?.status}).`, detail: detail.slice(0, 500) }, { status: res && res.status >= 400 && res.status < 500 ? res.status : 502 });
   }
 
   const json = (await res.json()) as {

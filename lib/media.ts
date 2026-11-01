@@ -4,6 +4,32 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 
 let ffmpeg: FFmpeg | null = null;
 let loading: Promise<FFmpeg> | null = null;
+let runs = 0;
+
+// ffmpeg.wasm leaks memory across many runs. Start a fresh engine after a failure or every few dozen runs.
+export function resetFFmpeg() {
+  try {
+    ffmpeg?.terminate();
+  } catch {
+    /* already gone */
+  }
+  ffmpeg = null;
+  loading = null;
+  fontReady = false;
+  runs = 0;
+}
+function countRun() {
+  runs++;
+}
+export function recycleIfTired() {
+  if (runs >= 40) resetFFmpeg();
+}
+// The worker sometimes rejects with a plain string: always surface a readable message.
+export function errorText(e: unknown, fallback = "Something went wrong."): string {
+  if (e instanceof Error && e.message) return e.message;
+  if (typeof e === "string" && e) return /memory access out of bounds|abort/i.test(e) ? "The video engine ran out of memory. Please try again." : e;
+  return fallback;
+}
 
 export async function getFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
   if (ffmpeg) return ffmpeg;
@@ -42,11 +68,22 @@ export function getDuration(file: File): Promise<number> {
     const v = document.createElement("video");
     v.preload = "metadata";
     const url = URL.createObjectURL(file);
-    v.onloadedmetadata = () => {
-      const d = v.duration;
+    const done = (d: number) => {
       URL.revokeObjectURL(url);
       if (!isFinite(d) || d <= 0) reject(new Error("Couldn't read the video's length."));
       else resolve(d);
+    };
+    v.onloadedmetadata = () => {
+      // Browser-recorded WebM often has no length in its header: seek to the end to make the browser find it.
+      if (v.duration === Infinity) {
+        v.ondurationchange = () => {
+          if (isFinite(v.duration)) done(v.duration);
+        };
+        v.currentTime = 1e101;
+        setTimeout(() => done(v.duration), 8000);
+        return;
+      }
+      done(v.duration);
     };
     v.onerror = () => {
       URL.revokeObjectURL(url);
@@ -80,27 +117,49 @@ export async function extractAudioChunks(
   duration: number,
   onChunk: (blob: Blob, index: number, offset: number, total: number) => void,
   onStage?: (text: string) => void,
+  opts: { skip?: (index: number) => boolean; shouldStop?: () => boolean } = {},
 ): Promise<void> {
+  recycleIfTired();
   const f = await getFFmpeg();
   const { path, dir } = await mountFile(f, file);
+  let failed = false;
   try {
     const total = Math.ceil(duration / CHUNK_SECONDS);
     for (let i = 0; i < total; i++) {
+      if (opts.shouldStop?.()) return;
       const start = i * CHUNK_SECONDS;
       const len = Math.min(CHUNK_SECONDS, duration - start);
+      // Parts already transcribed in this tab are not extracted again.
+      if (opts.skip?.(i)) {
+        onChunk(new Blob([]), i, start, total);
+        continue;
+      }
       onStage?.(`Extracting audio ${i + 1} of ${total}`);
       const out = `chunk${i}.mp3`;
+      countRun();
       const code = await f.exec([
         "-ss", start.toFixed(2), "-t", len.toFixed(2), "-i", path,
         "-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k", out,
       ]);
-      if (code !== 0) throw new Error(`Audio extraction failed on part ${i + 1}.`);
+      if (code !== 0) {
+        if (i === 0) throw new Error("This video has no audio track the browser can read.");
+        throw new Error(`Audio extraction failed on part ${i + 1}.`);
+      }
       const data = (await f.readFile(out)) as Uint8Array;
-      await f.deleteFile(out);
+      await f.deleteFile(out).catch(() => {});
+      // A near-empty part (audio ended before the video did): skip it, unless it's the first one.
+      if (data.byteLength < 2048 || len < 1) {
+        if (i === 0) throw new Error("This video has no readable audio.");
+        continue;
+      }
       onChunk(new Blob([data.slice().buffer], { type: "audio/mpeg" }), i, start, total);
     }
+  } catch (e) {
+    failed = true;
+    throw new Error(errorText(e, "Audio extraction failed."));
   } finally {
-    await unmount(f, dir);
+    if (failed) resetFFmpeg();
+    else await unmount(f, dir);
   }
 }
 
@@ -159,6 +218,7 @@ export async function exportClip(
   framing: Framing = "center",
 ): Promise<ExportResult> {
   const t0 = performance.now();
+  recycleIfTired();
   const f = await getFFmpeg();
   const { path, dir } = await mountFile(f, file);
   const dur = Math.max(0.5, end - start);
@@ -173,6 +233,7 @@ export async function exportClip(
     const video = ff.complex
       ? ["-filter_complex", `${ff.graph}${subs}[v]`, "-map", "[v]", "-map", "0:a?"]
       : ["-vf", `${ff.graph}${subs}`];
+    countRun();
     return f.exec([
       "-ss", start.toFixed(2), "-i", path, "-t", dur.toFixed(2),
       ...video, "-r", "30",
@@ -194,11 +255,20 @@ export async function exportClip(
     if (code !== 0) throw new Error("The export failed. Try a shorter clip.");
     const data = (await f.readFile("out.mp4")) as Uint8Array;
     await f.deleteFile("out.mp4");
+    // An almost-empty file means the range had no video in it (e.g. past the end).
+    if (data.length < 2000) throw new Error("That range has no video in it. Check the start and end times.");
     onProgress?.(1);
     return { blob: new Blob([data.slice().buffer], { type: "video/mp4" }), captioned, seconds: (performance.now() - t0) / 1000 };
+  } catch (e) {
+    // A non-Error rejection means the engine itself broke: start fresh next time.
+    if (!(e instanceof Error)) {
+      f.off("progress", onProg);
+      resetFFmpeg();
+    }
+    throw new Error(errorText(e, "The export failed. Please try again."));
   } finally {
     f.off("progress", onProg);
-    await unmount(f, dir);
+    if (ffmpeg === f) await unmount(f, dir);
   }
 }
 

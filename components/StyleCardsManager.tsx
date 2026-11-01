@@ -51,6 +51,7 @@ export default function StyleCardsManager({
   function makeDefault(id: string) {
     setDefaultBrandId(id);
     setDefaultId(id);
+    onChanged?.();
   }
 
   async function create() {

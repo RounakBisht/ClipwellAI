@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth-server";
 import { claudeJson, ClaudeError, VOICE_NOTE } from "@/lib/claude";
-import { languageLine, SHAPE, styleBlock, SYSTEM, type StyleInput } from "@/lib/copy-prompts";
+import { COPY_SCHEMA, languageLine, normalizeCopy, readJson, SHAPE, styleBlock, SYSTEM, type StyleInput } from "@/lib/copy-prompts";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,14 +10,17 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const denied = await requireUser();
   if (denied) return denied;
-  const body = (await req.json()) as {
+  const body = await readJson<{
     platform: "shorts" | "reels";
     language: string;
     content: Record<string, unknown>;
     instruction: string;
     makeRule: boolean;
     style: StyleInput;
-  };
+  }>(req, 100_000);
+  if (!body || !String(body.instruction || "").trim()) return NextResponse.json({ error: "Bad request." }, { status: 400 });
+  body.style = body.style || {};
+  body.instruction = String(body.instruction).slice(0, 1000);
   const platform = body.platform === "reels" ? "reels" : "shorts";
   const user = `${VOICE_NOTE}
 
@@ -26,7 +29,7 @@ ${styleBlock(body.style)}
 ${languageLine(body.language)}
 
 Current ${platform === "shorts" ? "YouTube Shorts" : "Instagram Reels"} copy:
-${JSON.stringify(body.content, null, 2)}
+${JSON.stringify(body.content ?? {}, null, 2).slice(0, 6000)}
 
 The team's edit (dictated): "${body.instruction}"
 
@@ -39,7 +42,19 @@ The team's edit (dictated): "${body.instruction}"
 
 Return exactly: {"content": ${SHAPE[platform]}, "rule": ${body.makeRule ? '{"text": "...", "platform": "all"}' : "null"}}`;
   try {
-    const out = await claudeJson<{ content: Record<string, unknown>; rule: { text: string; platform: string } | null }>(SYSTEM, user, 1000);
+    const schema = {
+      type: "object",
+      properties: {
+        content: COPY_SCHEMA[platform],
+        rule: { anyOf: [{ type: "null" }, { type: "object", properties: { text: { type: "string" }, platform: { type: "string" } } }] },
+      },
+      required: ["content"],
+    };
+    const raw = await claudeJson<{ content?: Record<string, unknown>; rule?: { text: string; platform: string } | null }>(SYSTEM, user, 1000, schema);
+    // Some replies skip the wrapper and return the copy itself.
+    const content = normalizeCopy(platform, raw?.content ?? raw);
+    if (!content) return NextResponse.json({ error: "The AI sent back empty copy. Please try again." }, { status: 502 });
+    const out = { content, rule: raw?.rule ?? null };
     const rule =
       body.makeRule && out.rule?.text
         ? { text: String(out.rule.text).slice(0, 120), platform: ["all", "shorts", "reels"].includes(out.rule.platform) ? out.rule.platform : "all" }

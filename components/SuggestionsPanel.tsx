@@ -4,6 +4,7 @@ import { useState } from "react";
 import { IconBulb, IconCalendarStats, IconChartBar, IconCut, IconMessage2, IconScissors, IconTypography, IconX } from "@tabler/icons-react";
 import type { CaptionLook, Clip, PlanSlot, StyleCard } from "@/lib/types";
 import { ymd } from "@/components/ContentCalendar";
+import { useDialog } from "@/components/useDialog";
 
 type Tip = { area: string; icon: typeof IconBulb; ok: boolean; text: string; target?: string; action?: string };
 
@@ -19,7 +20,7 @@ export function buildTips({ clips, slots, card, caption }: { clips: Clip[]; slot
     tips.push(
       (low.score || 0) < 75
         ? { area: "Clip picks", icon: IconScissors, ok: false, text: `"${low.title}" scores ${low.score}. Ask for a sharper hook in your brief, or swap it out.`, target: "brief", action: "Refine brief" }
-        : { area: "Clip picks", icon: IconScissors, ok: true, text: `Strong set: average score ${avg} across ${clips.length} clips.` },
+        : { area: "Clip picks", icon: IconScissors, ok: true, text: `Strong set: average score ${avg} across ${clips.length} clip${clips.length === 1 ? "" : "s"}.` },
     );
     const long = clips.filter((c) => len(c) > 45);
     const short = clips.filter((c) => len(c) < 15);
@@ -75,6 +76,7 @@ export function buildTips({ clips, slots, card, caption }: { clips: Clip[]; slot
 
 export default function SuggestionsPanel(props: { clips: Clip[]; slots: PlanSlot[]; card: StyleCard | null; caption: CaptionLook }) {
   const [open, setOpen] = useState(false);
+  const panelRef = useDialog<HTMLDivElement>(open, () => setOpen(false));
   const tips = buildTips(props);
   const todo = tips.filter((t) => !t.ok).length;
 
@@ -96,7 +98,7 @@ export default function SuggestionsPanel(props: { clips: Clip[]; slots: PlanSlot
         {todo > 0 && <span className="rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink">{todo}</span>}
       </button>
       {open && (
-        <div role="dialog" aria-label="Suggestions" className="animate-pop surface fixed right-5 bottom-20 z-30 flex max-h-[72vh] w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden">
+        <div ref={panelRef} tabIndex={-1} role="dialog" aria-label="Suggestions" className="animate-pop surface fixed outline-none right-5 bottom-20 z-30 flex max-h-[72vh] w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden">
           <div className="flex items-center justify-between px-5 pt-5">
             <div>
               <h2 className="text-lg font-semibold">Suggestions</h2>

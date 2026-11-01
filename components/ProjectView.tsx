@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addStyleCard, getDefaultBrandId, getProject, getProjectBrandId, listPlanSlots, setProjectBrandId } from "@/lib/store";
+import { addStyleCard, getDefaultBrandId, getProject, getProjectBrandId, listPlanSlots, listStyleCards, setProjectBrandId } from "@/lib/store";
 import { recallFile, rememberFile } from "@/lib/media";
 import ClipMaker from "@/components/ClipMaker";
 import BriefAndClips from "@/components/BriefAndClips";
@@ -9,6 +9,7 @@ import CopyPanel from "@/components/CopyPanel";
 import StyleCardPanel, { loadStyle } from "@/components/StyleCardPanel";
 import ContentCalendar from "@/components/ContentCalendar";
 import StyleCardsManager from "@/components/StyleCardsManager";
+import { backdropHandlers, useDialog } from "@/components/useDialog";
 import SuggestionsPanel from "@/components/SuggestionsPanel";
 import { DEFAULT_CAPTION_STYLE, buildSrt, clipWords } from "@/lib/captions";
 import { projectYoutubeId } from "@/lib/youtube";
@@ -28,6 +29,7 @@ export default function ProjectView({ id }: { id: string }) {
   const [styleKey, setStyleKey] = useState(0);
   const [brandId, setBrandId] = useState<string | null>(null);
   const [manage, setManage] = useState<{ open?: string; create?: boolean } | null>(null);
+  const manageRef = useDialog<HTMLDivElement>(Boolean(manage), () => setManage(null), { modal: true });
   const [clips, setClips] = useState<Clip[]>([]);
   const [slots, setSlots] = useState<PlanSlot[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -35,19 +37,32 @@ export default function ProjectView({ id }: { id: string }) {
   const makerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getProject(id).then(setProject).catch((e) => setError(e.message));
+    getProject(id)
+      .then((p) => {
+        setProject(p);
+        // The card picked for this project: this browser's choice, else the one saved on the project.
+        setBrandId(getProjectBrandId(id) || p?.brand_id || null);
+      })
+      .catch((e) => setError(e.message));
     setFile(recallFile(id));
-    setBrandId(getProjectBrandId(id));
   }, [id]);
 
   useEffect(() => {
+    // Ignore replies from an older load, so a slow default-card load can't overwrite the chosen card.
+    let live = true;
     loadStyle(brandId)
       .then(({ brand, cards }) => {
+        if (!live) return;
         setBrand(brand);
         setCard(cards[0] || null);
       })
       .catch(() => {});
+    return () => {
+      live = false;
+    };
   }, [brandId, styleKey]);
+
+  const refreshStyle = useCallback(() => setStyleKey((k) => k + 1), []);
 
   const switchCard = useCallback(
     (bid: string) => {
@@ -110,11 +125,20 @@ export default function ProjectView({ id }: { id: string }) {
   // Results loop: a logged outcome updates the clip, and wins/flops become learnings on the style card,
   // which the next "Find clips" run reads.
   async function onOutcome(clip: Clip, outcome: "great" | "ok" | "poor") {
+    if (clip.outcome === outcome) return;
     setClips((list) => list.map((c) => (c.id === clip.id ? { ...c, outcome } : c)));
-    if (outcome === "ok" || !brand || !card) return;
-    const note = `${outcome === "great" ? "Worked" : "Flopped"}: "${clip.title}" (${Math.round(clip.end_s - clip.start_s)} s, hook "${clip.hook}")`;
+    if (!brand) return;
     try {
-      const next = await addStyleCard(brand.id, { ...card.fields, learnings: [...(card.fields.learnings || []).slice(-7), note] }, card.rules, `Learned from results: ${note}`);
+      // Build on the latest card version, and keep one note per clip (a new result replaces the old one).
+      const latest = (await listStyleCards(brand.id))[0] || card;
+      if (!latest) return;
+      const tag = `"${clip.title}"`;
+      const others = (latest.fields.learnings || []).filter((l) => !l.includes(tag));
+      const hadNote = others.length !== (latest.fields.learnings || []).length;
+      if (outcome === "ok" && !hadNote) return;
+      const note = `${outcome === "great" ? "Worked" : "Flopped"}: ${tag} (${Math.round(clip.end_s - clip.start_s)} s, hook "${clip.hook}")`;
+      const learnings = outcome === "ok" ? others : [...others.slice(-7), note];
+      const next = await addStyleCard(brand.id, { ...latest.fields, learnings }, latest.rules, outcome === "ok" ? `Result updated: ${tag} marked OK` : `Learned from results: ${note}`);
       setCard(next);
       setStyleKey((k) => k + 1);
     } catch {
@@ -201,8 +225,8 @@ export default function ProjectView({ id }: { id: string }) {
                 onLoad={() => ytRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1 }), "*")}
               />
             ) : (
-              <label className="flex aspect-video cursor-pointer flex-col items-center justify-center bg-stone-900 px-6 text-center text-stone-200">
-                <input type="file" accept="video/*" className="hidden" onChange={(e) => reselect(e.target.files?.[0] || null)} />
+              <label className="flex aspect-video cursor-pointer flex-col items-center justify-center bg-stone-900 px-6 text-center text-stone-200 focus-within:ring-4 focus-within:ring-inset focus-within:ring-teal-500/60">
+                <input type="file" accept="video/*" className="sr-only" onChange={(e) => reselect(e.target.files?.[0] || null)} />
                 <span className="font-medium">Select the same video file to preview and export</span>
                 <span className="mt-1 text-sm text-stone-400">{project.source_name || "The original upload"}</span>
               </label>
@@ -210,7 +234,11 @@ export default function ProjectView({ id }: { id: string }) {
           </div>
           {mismatch && (
             <p className="mt-2 text-sm text-amber-700">
-              This file looks different from the one you transcribed ({project.source_name}). Clips may not line up.
+              This file looks different from the one you transcribed ({project.source_name}). Clips may not line up.{" "}
+              <label className="cursor-pointer font-semibold text-teal-800 underline underline-offset-2 focus-within:ring-2 focus-within:ring-teal-700/30">
+                <input type="file" accept="video/*" className="sr-only" onChange={(e) => reselect(e.target.files?.[0] || null)} />
+                Choose another file
+              </label>
             </p>
           )}
           <div id="brief" className="mt-6 scroll-mt-24">
@@ -232,6 +260,7 @@ export default function ProjectView({ id }: { id: string }) {
                 title={activeClip?.title || project.title}
                 initial={clipInit}
                 style={captionStyle}
+                duration={videoRef.current?.duration && Number.isFinite(videoRef.current.duration) ? videoRef.current.duration : project.duration_s}
                 getCurrentTime={() => videoRef.current?.currentTime ?? 0}
               />
             ) : ytId ? (
@@ -280,8 +309,8 @@ export default function ProjectView({ id }: { id: string }) {
                 YouTube doesn&apos;t let other apps download videos, so this step happens on YouTube. If it&apos;s your channel, open it in YouTube Studio, click ⋮ then Download, and upload the file here to export MP4s.
               </p>
             </div>
-                <label className="mt-3 block cursor-pointer rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-700 hover:bg-white">
-                  <input type="file" accept="video/*" className="hidden" onChange={(e) => reselect(e.target.files?.[0] || null)} />
+                <label className="mt-3 block cursor-pointer rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-700 hover:bg-white focus-within:ring-4 focus-within:ring-teal-700/20">
+                  <input type="file" accept="video/*" className="sr-only" onChange={(e) => reselect(e.target.files?.[0] || null)} />
                   <span className="font-semibold text-teal-800">Add the video file</span> you downloaded, to preview in 9:16 and export captioned MP4s. The transcript and clips stay as they are.
                 </label>
               </div>
@@ -308,7 +337,7 @@ export default function ProjectView({ id }: { id: string }) {
 
         <div className="min-w-0 space-y-6 lg:col-span-2">
           <div id="stylecard" className="scroll-mt-24">
-            <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} onManage={setManage} />
+            <StyleCardPanel compact refreshKey={styleKey} brandId={brand?.id ?? brandId} onSwitch={switchCard} onManage={setManage} onChanged={refreshStyle} />
           </div>
           <div className="surface overflow-hidden">
             <div className="flex items-center justify-between gap-2 border-b border-ink/8 px-5 py-3">
@@ -336,7 +365,10 @@ export default function ProjectView({ id }: { id: string }) {
                 return (
                   <li key={i}>
                     <button
-                      onClick={() => seek(s)}
+                      onClick={() => {
+                        setActiveClip(null);
+                        seek(s);
+                      }}
                       className={`flex w-full gap-3 rounded-2xl px-3 py-2 text-left hover:bg-white/80 ${active ? "bg-teal-50" : ""}`}
                     >
                       <span className="w-12 shrink-0 font-mono text-xs text-stone-500">{fmtTime(s)}</span>
@@ -354,8 +386,8 @@ export default function ProjectView({ id }: { id: string }) {
       </div>
       <SuggestionsPanel clips={clips} slots={slots} card={card} caption={captionStyle} />
       {manage && (
-        <div role="dialog" aria-label="Style cards" className="fixed inset-0 z-40 overflow-y-auto bg-ink/40 p-4 backdrop-blur-sm" onClick={() => setManage(null)}>
-          <div className="animate-pop relative mx-auto mt-8 max-w-5xl rounded-[32px] bg-[#fbf6ee] p-6 shadow-2xl sm:p-8" onClick={(e) => e.stopPropagation()}>
+        <div role="dialog" aria-modal="true" aria-label="Style cards" className="fixed inset-0 z-40 overflow-y-auto overscroll-contain bg-ink/40 p-4 backdrop-blur-sm" {...backdropHandlers(() => setManage(null))}>
+          <div ref={manageRef} tabIndex={-1} className="animate-pop relative mx-auto mt-8 max-w-5xl rounded-[32px] bg-[#fbf6ee] p-6 shadow-2xl outline-none sm:p-8">
             <button aria-label="Close style cards" onClick={() => setManage(null)} className="absolute top-5 right-5 rounded-full bg-ink/5 p-2 text-stone-600 hover:bg-ink/10">
               <IconX size={18} />
             </button>

@@ -2,6 +2,7 @@
 // We never download the video itself; MP4 export still needs the file.
 import { NextResponse } from "next/server";
 import { youtubeId } from "@/lib/youtube";
+import { requireUser } from "@/lib/auth-server";
 import type { Segment, Word } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -121,7 +122,8 @@ async function fetchCues(track: Track) {
         return {
           start,
           end: start + (e.dDurationMs || 0) / 1000,
-          parts: e.segs!.map((s) => ({ text: s.utf8, at: s.tOffsetMs !== undefined ? start + s.tOffsetMs / 1000 : undefined })),
+          // The first word of a cue has no offset: it starts with the cue.
+          parts: e.segs!.map((s, k) => ({ text: s.utf8, at: s.tOffsetMs !== undefined ? start + s.tOffsetMs / 1000 : k === 0 ? start : undefined })),
         };
       });
   }
@@ -135,6 +137,8 @@ async function fetchCues(track: Track) {
 }
 
 export async function POST(req: Request) {
+  const denied = await requireUser();
+  if (denied) return denied;
   const { url, lang = "hinglish" } = (await req.json().catch(() => ({}))) as { url?: string; lang?: string };
   const id = youtubeId(url || "");
   if (!id) return NextResponse.json({ error: "That doesn't look like a YouTube link." }, { status: 400 });

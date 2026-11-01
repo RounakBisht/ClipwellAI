@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { extractAudioChunks, getDuration, getFFmpeg, rememberFile } from "@/lib/media";
+import { useEffect, useRef, useState } from "react";
+import { errorText, extractAudioChunks, getDuration, getFFmpeg, rememberFile } from "@/lib/media";
 import { createProject } from "@/lib/store";
 import { fmtTime, LANGUAGE_LABEL } from "@/lib/format";
 import type { Segment, TranscriptLanguage, Word } from "@/lib/types";
@@ -10,7 +10,12 @@ import { IconBrandYoutube, IconDownload, IconUpload } from "@tabler/icons-react"
 
 const MAX_MINUTES = 240; // 4-hour podcasts are fine; audio is split into 5-minute parts
 
-async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLanguage, part: string) {
+// Finished parts are kept for this tab, so a retry after a failure only sends the parts that are still missing.
+const DONE = new Map<string, { words: Word[]; segments: Segment[] }>();
+const RATE_WAIT_MS = 60_000;
+const MAX_RATE_WAITS = 30;
+
+async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLanguage, part: string, onWait?: (msg: string) => void) {
   let lastError = "";
   let rateWaits = 0;
   for (let attempt = 1; attempt <= 3 + rateWaits; attempt++) {
@@ -30,20 +35,30 @@ async function transcribeChunk(blob: Blob, offset: number, lang: TranscriptLangu
     if (res.ok) return json as { words: Word[]; segments: Segment[]; language: string | null };
     lastError = `${json.error || "Transcription failed"} (part ${part}, HTTP ${res.status})${json.detail ? `: ${String(json.detail).slice(0, 200)}` : ""}`;
     // Long podcasts can hit the transcription provider's hourly limit: wait and resume instead of failing.
-    if (/rate.?limit|429|too many/i.test(`${json.error} ${json.detail}`) && rateWaits < 12) {
+    if (/rate.?limit|429|too many/i.test(`${json.error} ${json.detail}`) && rateWaits < MAX_RATE_WAITS) {
       rateWaits++;
-      await new Promise((r) => setTimeout(r, 20000));
+      onWait?.(`The transcription service's hourly limit was reached at part ${part}. Finished parts are kept; continuing automatically in a minute (wait ${rateWaits} of ${MAX_RATE_WAITS})`);
+      await new Promise((r) => setTimeout(r, RATE_WAIT_MS));
       continue;
     }
     if (res.status !== 429 && res.status < 500) break;
     await new Promise((r) => setTimeout(r, 1500 * attempt));
   }
+  if (rateWaits >= MAX_RATE_WAITS) lastError += " The hourly transcription limit is still in effect. Click Transcribe again later; finished parts won't be redone.";
   throw new Error(lastError);
 }
 
 export default function NewProject() {
   const router = useRouter();
   const [mode, setMode] = useState<"youtube" | "file">("file");
+  // If the user leaves the page mid-run, don't drag them to the new project later.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   const [link, setLink] = useState("");
   const ytId = youtubeId(link);
   const [pasted, setPasted] = useState("");
@@ -53,6 +68,16 @@ export default function NewProject() {
   const [title, setTitle] = useState("");
   const [lang, setLang] = useState<TranscriptLanguage>("hinglish");
   const [busy, setBusy] = useState(false);
+  // Warn before closing the tab mid-transcription (the work would be lost).
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
   const [stage, setStage] = useState("");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
@@ -68,7 +93,7 @@ export default function NewProject() {
       setDuration(d);
       setTitle(f.name.replace(/\.[^.]+$/, ""));
     } catch (e) {
-      setError((e as Error).message);
+      setError(errorText(e));
     }
   }
 
@@ -94,9 +119,9 @@ export default function NewProject() {
         source_size: null,
       });
       setProgress(1);
-      router.push(`/studio/p/${project.id}`);
+      if (alive.current) router.push(`/studio/p/${project.id}`);
     } catch (e) {
-      setError((e as Error).message || "Something went wrong.");
+      setError(errorText(e));
       setShowPaste(true);
       setBusy(false);
     }
@@ -106,7 +131,8 @@ export default function NewProject() {
   async function startPasted() {
     if (!ytId) return;
     const t = parsePastedTranscript(pasted);
-    if (t.segments.length < 3) return setError("Couldn't find timestamps in that text. Copy the whole transcript panel, including the times.");
+    if (t.segments.length < 3)
+      return setError(t.segments.length ? "That's only a couple of lines. Copy the whole transcript panel, including the times." : "Couldn't find timestamps in that text. Copy the whole transcript panel, including the times.");
     setBusy(true);
     setError("");
     setStage("Saving the project");
@@ -122,15 +148,15 @@ export default function NewProject() {
         source_size: null,
       });
       setProgress(1);
-      router.push(`/studio/p/${project.id}`);
+      if (alive.current) router.push(`/studio/p/${project.id}`);
     } catch (e) {
-      setError((e as Error).message || "Something went wrong.");
+      setError(errorText(e));
       setBusy(false);
     }
   }
 
   async function start() {
-    if (!file) return;
+    if (!file || busy) return;
     setBusy(true);
     setError("");
     setProgress(0.02);
@@ -146,6 +172,7 @@ export default function NewProject() {
       let queue: Promise<void> = Promise.resolve();
       let failure: Error | null = null;
 
+      const keyFor = (i: number) => `${file.name}|${file.size}|${file.lastModified}|${lang}|${i}`;
       await extractAudioChunks(
         file,
         duration,
@@ -156,15 +183,19 @@ export default function NewProject() {
           queue = queue.then(async () => {
             if (failure) return;
             try {
-              results[i] = await transcribeChunk(blob, offset, lang, `${i + 1} of ${total}`);
+              const key = keyFor(i);
+              results[i] = DONE.get(key) || (await transcribeChunk(blob, offset, lang, `${i + 1} of ${total}`, setStage));
+              DONE.set(key, results[i]);
               transcribed++;
               bump();
+              setStage("Transcribing with word timings");
             } catch (e) {
               failure = e as Error;
             }
           });
         },
         setStage,
+        { skip: (i) => DONE.has(keyFor(i)), shouldStop: () => Boolean(failure) },
       );
       setStage("Transcribing with word timings");
       await queue;
@@ -186,9 +217,9 @@ export default function NewProject() {
       });
       rememberFile(project.id, file);
       setProgress(1);
-      router.push(`/studio/p/${project.id}`);
+      if (alive.current) router.push(`/studio/p/${project.id}`);
     } catch (e) {
-      setError((e as Error).message || "Something went wrong.");
+      setError(errorText(e));
       setBusy(false);
     }
   }
@@ -197,7 +228,7 @@ export default function NewProject() {
     <div className="surface p-6 sm:p-10">
       <h2 className="text-center text-2xl font-bold sm:text-3xl">New project</h2>
       <p className="mx-auto mt-2 max-w-xl text-center text-sm text-stone-600 sm:text-base">
-        Upload a podcast or long video of any length, or paste a YouTube link. Uploads stay on your laptop; only the audio is sent for transcription.
+        Upload a podcast or long video (up to 4 hours), or paste a YouTube link. Uploads stay on your laptop; only the audio is sent for transcription.
       </p>
 
       <div className="mt-6 flex justify-center"><div role="tablist" aria-label="Source" className="seg inline-flex">
@@ -207,7 +238,11 @@ export default function NewProject() {
             role="tab"
             aria-selected={mode === k}
             disabled={busy}
-            onClick={() => setMode(k)}
+            onClick={() => {
+              setMode(k);
+              setTitle("");
+              setError("");
+            }}
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap sm:px-4 ${mode === k ? "seg-on text-teal-800" : "text-stone-600 hover:text-ink"}`}
           >
             <Icon size={16} stroke={1.8} aria-hidden="true" /> {label}
@@ -305,11 +340,11 @@ export default function NewProject() {
       )}
 
       {mode === "file" && (
-      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-teal-700/25 bg-white/50 px-6 py-12 text-center sm:py-16 hover:border-marigold hover:bg-marigold-soft/60">
+      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-teal-700/25 bg-white/50 px-6 py-12 text-center focus-within:border-teal-700 focus-within:ring-4 focus-within:ring-teal-700/15 sm:py-16 hover:border-marigold hover:bg-marigold-soft/60">
         <input
           type="file"
           accept="video/*"
-          className="hidden"
+          className="sr-only"
           disabled={busy}
           onChange={(e) => pick(e.target.files?.[0] || null)}
         />
@@ -324,7 +359,7 @@ export default function NewProject() {
           <>
             <IconUpload size={30} stroke={1.6} className="mb-2 text-teal-700" aria-hidden="true" />
             <span className="text-lg font-semibold">Choose a video file</span>
-            <span className="mt-1 text-sm text-stone-600">MP4 works best. 720p keeps things fast. Any length.</span>
+            <span className="mt-1 text-sm text-stone-600">MP4 works best. 720p keeps things fast. Up to 4 hours.</span>
           </>
         )}
       </label>
@@ -368,7 +403,7 @@ export default function NewProject() {
           <p className="mt-2 text-sm text-stone-600">{stage}…</p>
         </div>
       )}
-      {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <button
         onClick={mode === "youtube" ? startYoutube : start}

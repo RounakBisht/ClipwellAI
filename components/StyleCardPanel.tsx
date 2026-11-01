@@ -19,12 +19,14 @@ export default function StyleCardPanel({
   brandId = null,
   onSwitch,
   onManage,
+  onChanged,
 }: {
   compact?: boolean;
   refreshKey?: number;
   brandId?: string | null;
   onSwitch?: (brandId: string) => void;
   onManage?: (opts: { open?: string; create?: boolean }) => void;
+  onChanged?: () => void;
 }) {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [all, setAll] = useState<Brand[]>([]);
@@ -68,6 +70,7 @@ export default function StyleCardPanel({
       );
       setBrand(b);
       setCards([card]);
+      onChanged?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -76,11 +79,20 @@ export default function StyleCardPanel({
   }
 
   async function toggleRule(rule: Rule) {
-    if (!brand || !cards?.[0]) return;
-    const cur = cards[0];
-    const rules = cur.rules.map((r) => (r.id === rule.id ? { ...r, active: !r.active } : r));
-    const card = await addStyleCard(brand.id, cur.fields, rules, `${rule.active ? "Turned off" : "Turned on"}: ${rule.text}`);
-    setCards([card, ...cards]);
+    if (!brand || !cards?.[0] || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const cur = cards[0];
+      const rules = cur.rules.map((r) => (r.id === rule.id ? { ...r, active: !r.active } : r));
+      const card = await addStyleCard(brand.id, cur.fields, rules, `${rule.active ? "Turned off" : "Turned on"}: ${rule.text}`);
+      setCards([card, ...cards]);
+      onChanged?.();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   const shell = "surface p-6";
@@ -184,13 +196,14 @@ export default function StyleCardPanel({
                     {r.text}
                     {r.platform !== "all" && <span className="ml-1 text-xs text-stone-500">({r.platform === "shorts" ? "Shorts" : "Reels"})</span>}
                   </span>
-                  <button onClick={() => toggleRule(r)} className="shrink-0 text-xs text-teal-700 hover:underline">{r.active ? "Turn off" : "Turn on"}</button>
+                  <button onClick={() => toggleRule(r)} disabled={busy} className="shrink-0 text-xs text-teal-700 hover:underline disabled:opacity-50">{r.active ? "Turn off" : "Turn on"}</button>
                 </li>
               ))}
             </ul>
           )}
         </div>
       )}
+      {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {showHistory && (
         <ol className="mt-4 space-y-1 border-t border-ink/8 pt-3 text-xs text-stone-600">
           {cards.map((c) => (

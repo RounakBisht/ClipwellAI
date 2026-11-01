@@ -13,7 +13,7 @@
   --color-sand: #f1e4cc;
   --color-ink: #17262a;
   --color-marigold: #f6a21e;
-  --color-marigold-deep: #a85f00;
+  --color-marigold-deep: #9a5700;
   --color-marigold-soft: #fff0d2;
   --color-brand: #0f766e;
   /* SF Pro from the device when installed (Apple devices, or installed locally); Geist everywhere else. */
@@ -119,10 +119,12 @@ h1, h2, h3, .font-display {
 .lift { transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease; }
 .lift:hover { transform: translateY(-4px); }
 @keyframes float { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-10px) rotate(var(--r, 0deg)); } }
-.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float { transform: rotate(var(--r, 0deg)); animation: float 6s ease-in-out infinite; }
 @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(246,162,30,.55); } 100% { box-shadow: 0 0 0 12px rgba(246,162,30,0); } }
-.pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+/* Pulse drawn on its own layer with transform/opacity only, so it never repaints the page. */
+@keyframes pulse-ring { from { transform: scale(1); opacity: 0.55; } to { transform: scale(3.4); opacity: 0; } }
+.pulse-ring { position: relative; }
+.pulse-ring::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(246, 162, 30, 0.9); animation: pulse-ring 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; will-change: transform, opacity; }
 /* Sections rise in as they scroll into view (Chrome/Edge; others just show them) */
 @supports (animation-timeline: view()) {
   .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; }
@@ -140,7 +142,6 @@ h1, h2, h3, .font-display {
 :where(a, button, input, select, textarea, summary, [role="radio"], [tabindex]):focus-visible {
   outline: 2.5px solid var(--color-brand, #0f766e);
   outline-offset: 2px;
-  border-radius: 0.6rem;
 }
 
 /* Placeholder text meets AA contrast on white inputs. */

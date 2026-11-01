@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import { IconBrandInstagram, IconBrandYoutube, IconCheck, IconChevronLeft, IconChevronRight, IconDownload, IconX } from "@tabler/icons-react";
 import { replacePlanSlots, updateClip } from "@/lib/store";
+import { useDialog } from "@/components/useDialog";
 import type { Clip, PlanSlot, Platform } from "@/lib/types";
 
 const BEST_TIME: Record<Platform, string> = { reels: "7:30 pm", shorts: "1:00 pm" };
@@ -53,6 +54,7 @@ export default function ContentCalendar({
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [open, setOpen] = useState<string | null>(null);
+  const dayRef = useDialog<HTMLDivElement>(Boolean(open), () => setOpen(null));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
@@ -63,7 +65,11 @@ export default function ContentCalendar({
 
   // Calendar export: one row per planned post, opens in Excel or Google Sheets.
   function exportCsv() {
-    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const esc = (v: string | number) => {
+      const s = String(v);
+      const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
     const rows = [["Date", "Day", "Platform", "Post time", "Title", "Concept", "Length (s)", "Clip from", "Clip to"]];
     for (const s of slots) {
@@ -231,7 +237,7 @@ export default function ContentCalendar({
 
       {/* Day pop-up */}
       {open && (
-        <div role="dialog" aria-label={`Plan for ${fmtDay(open)}`} className="animate-pop absolute inset-x-3 bottom-3 z-10 rounded-[22px] bg-white p-4 shadow-[0_24px_60px_-20px_rgba(16,60,56,.55)]">
+        <div ref={dayRef} tabIndex={-1} role="dialog" aria-label={`Plan for ${fmtDay(open)}`} className="animate-pop absolute outline-none inset-x-3 bottom-3 z-10 rounded-[22px] bg-white p-4 shadow-[0_24px_60px_-20px_rgba(16,60,56,.55)]">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">{fmtDay(open)}</p>
             <button aria-label="Close" onClick={() => setOpen(null)} className="rounded-full p-1 text-stone-500 hover:bg-ink/5">

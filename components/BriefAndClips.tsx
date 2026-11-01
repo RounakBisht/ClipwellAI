@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import ClipPreview from "@/components/ClipPreview";
-import { listClips, replaceClips, updateProject } from "@/lib/store";
+import { clipWorkExists, listClips, replaceClips, updateProject } from "@/lib/store";
 import { fmtTime } from "@/lib/format";
 import type { CaptionStyle } from "@/lib/captions";
 import type { Brand, Clip, Project, StyleCard } from "@/lib/types";
@@ -40,14 +40,24 @@ export default function BriefAndClips({
   }, [project.id]);
 
   async function find() {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
+      // Clips that come back with the same range keep their copy, calendar posts and results; others lose them.
+      if (
+        clips?.length &&
+        (await clipWorkExists(project.id)) &&
+        !window.confirm("Find clips again? Clips that change will lose their copy, calendar posts and logged results. Clips that stay the same keep them.")
+      ) {
+        setBusy(false);
+        return;
+      }
       const res = await fetch("/api/clips", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          brief,
+          brief: brief.trim(),
           count,
           duration: project.duration_s,
           segments: project.segments,
@@ -64,6 +74,7 @@ export default function BriefAndClips({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Couldn't find clips (${res.status}).`);
+      if (!Array.isArray(json.clips) || !json.clips.length) throw new Error("No usable clips came back. Try a broader brief.");
       const saved = await replaceClips(
         project.id,
         (json.clips as { start: number; end: number; title: string; hook: string; reason: string; score: number }[]).map((c, i) => ({
@@ -74,7 +85,6 @@ export default function BriefAndClips({
           hook: c.hook,
           reason: c.reason,
           score: c.score,
-          outcome: null,
         })),
       );
       await updateProject(project.id, { brief });

@@ -14,7 +14,7 @@ export default async function Home({
 }) {
   const sp = await searchParams;
   // If Supabase fell back to the Site URL, the code lands here: finish sign-in on the callback route.
-  if (sp.code) redirect(`/auth/callback?code=${encodeURIComponent(sp.code)}`);
+  if (sp.code && !DEMO_MODE && SUPABASE_READY) redirect(`/auth/callback?code=${encodeURIComponent(sp.code)}`);
   let signedIn = false;
   if (!DEMO_MODE && SUPABASE_READY) {
     const supabase = await createClient();
@@ -24,7 +24,6 @@ export default async function Home({
     signedIn = Boolean(user);
   }
   const error = sp.error;
-  const reason = sp.reason || sp.error_description;
 
   const steps = [
     { icon: IconBrandYoutube, kicker: "Upload karo", title: "Paste a link or drop a video", body: "A YouTube podcast, workshop or founder talk, however long it runs." },
@@ -42,7 +41,7 @@ export default async function Home({
   ];
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden">
+    <div className="min-h-[100dvh] overflow-x-clip">
       <header className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-6 py-6">
         <Logo />
         <div className="hidden flex-col items-end gap-2 text-right text-sm sm:flex">
@@ -56,6 +55,7 @@ export default async function Home({
           </a>
         </div>
       </header>
+      <main>
 
       <section className="mx-auto max-w-6xl px-6 pt-10 text-center">
         <p className="animate-rise inline-flex items-center gap-2 rounded-full bg-marigold-soft px-3.5 py-1 text-sm font-semibold text-marigold-deep">
@@ -94,10 +94,9 @@ export default async function Home({
           {" "}at{" "}
           <a href={PRODUCT_SPACE_URL} target="_blank" rel="noreferrer" className="font-semibold text-teal-800 underline underline-offset-2">Product Space</a> Hackathon
         </p>
-        {error && (
+        {error && !DEMO_MODE && SUPABASE_READY && (
           <p className="mx-auto mt-4 max-w-xl text-sm text-red-700">
             Sign-in didn&apos;t complete. Please try again.
-            {reason && <span className="mt-1 block text-xs text-red-600">Reason: {reason}</span>}
           </p>
         )}
 
@@ -146,7 +145,7 @@ export default async function Home({
         <div className="reveal relative grid items-center gap-10 overflow-hidden rounded-[40px] bg-gradient-to-br from-teal-800 via-teal-900 to-[#0b2f2e] p-8 text-teal-50 shadow-[0_40px_80px_-40px_rgba(11,47,46,.8)] sm:p-12 lg:grid-cols-2">
           <span className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-marigold/25 blur-3xl" aria-hidden="true" />
           <div className="relative">
-            <p className="text-sm font-semibold text-marigold">The part other tools skip</p>
+            <p className="text-sm font-semibold text-[#ffb84d]">The part other tools skip</p>
             <h2 className="mt-2 text-4xl font-bold text-white sm:text-5xl">A style card that learns from every edit</h2>
             <p className="mt-4 text-lg text-teal-100">
               Say &ldquo;too salesy, drop the emojis&rdquo; once. Mark it as a rule, and every future clip follows it. Tell it what worked, and it picks better next time.
@@ -156,6 +155,7 @@ export default async function Home({
         </div>
       </section>
 
+      </main>
       <footer className="px-6 pb-10 text-center text-sm text-stone-600">
         <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <LogoMark size={18} /> Made by{" "}
@@ -179,7 +179,7 @@ export default async function Home({
           </span>
         </span>
       </footer>
-    </main>
+    </div>
   );
 }
 
@@ -191,12 +191,12 @@ function HeroClips() {
     { src: "/hero/clip-c", tag: "On-brand copy", r: "7deg", y: "28px", z: 1, post: true },
   ];
   return (
-    <div className="hero-row relative mx-auto mt-14 flex max-w-3xl items-start justify-center" aria-label="Example clips made with ClipwellAI">
+    <div role="group" className="hero-row relative mx-auto mt-14 flex max-w-3xl items-start justify-center" aria-label="Example clips made with ClipwellAI">
       <span className="pointer-events-none absolute top-1/2 left-1/2 hidden h-72 w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-600/20 blur-3xl sm:block" aria-hidden="true" />
       {clips.map((c, i) => (
         <div
           key={c.src}
-          className="hero-phone animate-rise group relative -mx-3 w-[31%] max-w-[230px] sm:-mx-2"
+          className="hero-phone animate-rise group relative -mx-2 w-[31%] max-w-[230px]"
           style={{ animationDelay: `${300 + i * 120}ms`, zIndex: c.z, marginTop: c.y }}
         >
           <div className="animate-float" style={{ ["--r" as string]: c.r, animationDelay: `${i * 0.7}s` } as React.CSSProperties}>
@@ -218,7 +218,7 @@ function HeroClips() {
 // Example of how the clip looks once posted: Reels-style action rail and the caption ClipwellAI wrote.
 function ReelOverlay() {
   return (
-    <div className="pointer-events-none absolute inset-[5px] overflow-hidden rounded-[25px] text-left text-white">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-[5px] overflow-hidden rounded-[25px] text-left text-white">
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
       <div className="absolute right-2 bottom-[22%] flex flex-col items-center gap-2.5 text-[10px] font-semibold [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
         <span className="flex flex-col items-center"><IconHeartFilled size={20} className="text-[#ff3b5c]" aria-hidden="true" />14.3K</span>
@@ -257,7 +257,7 @@ function StyleCardTeaser() {
       <dl className="mt-4 divide-y divide-ink/8 text-sm">
         {rows.map(([k, v]) => (
           <div key={k} className="flex justify-between gap-4 py-2.5">
-            <dt className="text-stone-500">{k}</dt>
+            <dt className="text-stone-600">{k}</dt>
             <dd className={`font-medium ${k === "Emojis" ? "rounded-md bg-marigold-soft px-1.5 text-marigold-deep" : ""}`}>{v}</dd>
           </div>
         ))}

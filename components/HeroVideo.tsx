@@ -7,6 +7,12 @@ export default function HeroVideo({ src, poster, className }: { src: string; pos
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
+    // Respect reduced motion: show the poster frame instead of looping video.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      v.pause();
+      v.removeAttribute("autoplay");
+      return;
+    }
     let visible = true;
     const play = () => {
       if (visible && v.paused) v.play().catch(() => {});
@@ -36,5 +42,5 @@ export default function HeroVideo({ src, poster, className }: { src: string; pos
       document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
-  return <video ref={ref} className={className} src={src} poster={poster} autoPlay muted loop playsInline preload="auto" disablePictureInPicture />;
+  return <video ref={ref} aria-hidden="true" tabIndex={-1} className={className} src={src} poster={poster} autoPlay muted loop playsInline preload="auto" disablePictureInPicture />;
 }

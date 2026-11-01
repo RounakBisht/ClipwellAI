@@ -9,6 +9,8 @@ export default function DemoVideo({ src, poster }: { src: string; poster: string
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
+    // Reduced motion: no autoplay; the button below starts it with sound.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const io = new IntersectionObserver(([e]) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause()), { threshold: 0.3 });
     io.observe(v);
     return () => io.disconnect();
@@ -22,7 +24,7 @@ export default function DemoVideo({ src, poster }: { src: string; poster: string
   }
   return (
     <div className="relative h-full w-full">
-      <video ref={ref} className="h-full w-full rounded-[22px] bg-ink object-cover" src={src} poster={poster} muted loop playsInline preload="metadata" />
+      <video ref={ref} aria-label="ClipwellAI 30-second product demo" className="h-full w-full rounded-[22px] bg-ink object-cover" src={src} poster={poster} muted loop playsInline preload="metadata" />
       <button
         onClick={toggle}
         aria-label={muted ? "Turn sound on" : "Mute"}

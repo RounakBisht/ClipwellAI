@@ -64,7 +64,7 @@ export async function claudeJson<T>(system: string, user: string, maxTokens = 20
       return extractJson(again) as T;
     } catch (e2) {
       if (e2 instanceof ClaudeError) throw e2;
-      throw new ClaudeError("The AI's reply came back in the wrong format. Please try again, or make the brief a little broader.", 502);
+      throw new ClaudeError("The AI's reply came back in the wrong format. Please try again.", 502);
     }
   }
 }

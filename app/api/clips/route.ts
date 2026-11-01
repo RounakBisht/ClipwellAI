@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth-server";
 import { claudeJson, ClaudeError, VOICE_NOTE } from "@/lib/claude";
+import { readJson } from "@/lib/copy-prompts";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -62,14 +63,17 @@ function snap(p: Picked, segs: Seg[], duration: number, MIN_LEN: number): Picked
 export async function POST(req: Request) {
   const denied = await requireUser();
   if (denied) return denied;
-  const body = (await req.json()) as {
+  const body = await readJson<{
     brief: string;
     count: number;
     duration: number;
     segments: Seg[];
     brand?: { name?: string; sells?: string | null; audience?: string | null };
     style?: { tone?: string; hookStyle?: string; rules?: string[]; learnings?: string[] };
-  };
+  }>(req, 2_000_000);
+  if (!body || !Array.isArray(body.segments) || !body.segments.length) return NextResponse.json({ error: "This project has no transcript to pick clips from." }, { status: 400 });
+  body.segments = body.segments.filter((s) => Array.isArray(s) && Number.isFinite(Number(s[1])) && Number.isFinite(Number(s[2]))).map(([t, s, e]) => [String(t ?? ""), Number(s), Number(e)] as Seg);
+  body.brief = String(body.brief || "").trim().slice(0, 1500);
   const duration = Number(body.duration) || (body.segments.length ? body.segments[body.segments.length - 1][2] : 0);
   // Short videos can't hold several 20-60 s clips: ask for fewer, shorter ones instead of an impossible request.
   const short = duration < 150;
@@ -77,7 +81,8 @@ export async function POST(req: Request) {
   const fits = Math.max(1, Math.floor(duration / (short ? 12 : 25)));
   const count = Math.min(Math.min(5, Math.max(1, Number(body.count) || 4)), fits);
   const lenRule = short ? `run 8 to ${Math.max(10, Math.min(45, Math.round(duration / count)))} seconds` : "run 20 to 60 seconds";
-  const lines = body.segments.map(([t, s, e]) => `[${s.toFixed(1)}-${e.toFixed(1)}] ${t}`).join("\n");
+  // Keep the prompt within a sane size even for very long podcasts.
+  const lines = body.segments.map(([t, s, e]) => `[${s.toFixed(1)}-${e.toFixed(1)}] ${t}`).join("\n").slice(0, 600_000);
 
   const system =
     "You are a senior short-form video editor for Indian D2C brands. You pick moments from long videos that work as standalone YouTube Shorts and Instagram Reels, and you explain each pick in plain words. Reply with JSON only.";
@@ -108,12 +113,31 @@ Return exactly:
   try {
     const out = await claudeJson<{ clips: Picked[] }>(system, user, 2500, CLIPS_SCHEMA);
     const segs = body.segments;
-    const picked = (out.clips || [])
-      .map((c) => snap({ ...c, start: Number(c.start), end: Number(c.end), score: Math.round(Number(c.score) || 0) }, segs, duration, minLen))
+    const txt = (x: unknown, max: number) => (typeof x === "string" ? x : x == null ? "" : String(x)).trim().slice(0, max);
+    const raw = Array.isArray(out?.clips) ? out.clips : [];
+    let lastEnd = -Infinity;
+    const picked = raw
+      .filter((c) => c && Number.isFinite(Number(c.start)) && Number.isFinite(Number(c.end)) && Number(c.end) > Number(c.start) && txt(c.title, 120))
+      .map((c) => {
+        let score = Number(c.score);
+        if (score > 0 && score <= 1) score *= 100;
+        return snap(
+          { start: Number(c.start), end: Number(c.end), title: txt(c.title, 120), hook: txt(c.hook, 120) || txt(c.title, 60), reason: txt(c.reason, 600), score: Math.max(0, Math.min(100, Math.round(score || 0))) },
+          segs,
+          duration,
+          minLen,
+        );
+      })
       .filter((c): c is Picked => Boolean(c))
       .sort((a, b) => a.start - b.start)
-      .filter((c, i, arr) => i === 0 || c.start >= arr[i - 1].end - 1)
-      .sort((a, b) => b.score - a.score);
+      // Drop any clip that overlaps one already kept.
+      .filter((c) => {
+        if (c.start < lastEnd - 1) return false;
+        lastEnd = c.end;
+        return true;
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count);
     if (!picked.length) return NextResponse.json({ error: "No usable clips came back. Try a broader brief." }, { status: 422 });
     return NextResponse.json({ clips: picked });
   } catch (e) {
