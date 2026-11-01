@@ -158,3 +158,7 @@ input::placeholder, textarea::placeholder { color: #78716c; opacity: 1; }
 @media (max-width: 399px) { .hero-row { zoom: 0.49; } }
 @media (max-width: 379px) { .hero-row { zoom: 0.46; } }
 @media (max-width: 349px) { .hero-row { zoom: 0.42; } }
+
+/* Footer visitor pill fades in once the count arrives. */
+.visitor-pill { animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) { .visitor-pill { animation: none; } }

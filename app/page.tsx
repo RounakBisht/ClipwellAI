@@ -6,6 +6,7 @@ import Logo, { LogoMark } from "@/components/Logo";
 import { APP_NAME, DEMO_MODE, PRODUCT_SPACE_URL, SUPABASE_READY, WISPR_URL } from "@/lib/config";
 import { IconTrophy, IconBrandYoutube, IconBrandLinkedin, IconChartArrowsVertical, IconBrain, IconCalendarEvent, IconCut, IconDots, IconHeartFilled, IconLock, IconMessageCircle, IconMicrophone, IconSend, IconSparkles, IconTypography } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/server";
+import VisitorCount from "@/components/VisitorCount";
 
 export default async function Home({
   searchParams,
@@ -178,6 +179,7 @@ export default async function Home({
             </a>
           </span>
         </span>
+        <VisitorCount />
       </footer>
     </div>
   );
