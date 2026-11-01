@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import HeroVideo from "@/components/HeroVideo";
+import DemoVideo from "@/components/DemoVideo";
 import SignInButton from "@/components/SignInButton";
 import Logo, { LogoMark } from "@/components/Logo";
 import { APP_NAME, DEMO_MODE, PRODUCT_SPACE_URL, SUPABASE_READY, WISPR_URL } from "@/lib/config";
@@ -41,7 +40,6 @@ export default async function Home({
     { icon: IconCalendarEvent, label: "Content calendar" },
     { icon: IconChartArrowsVertical, label: "Learns from what performed" },
   ];
-  const demoVideo = existsSync(join(process.cwd(), "public", "demo", "demo.mp4"));
 
   return (
     <main className="min-h-[100dvh] overflow-x-hidden">
@@ -139,16 +137,8 @@ export default async function Home({
             </li>
           ))}
         </ol>
-        <div className="reveal surface mx-auto mt-16 flex aspect-[4/3] max-w-3xl items-center justify-center overflow-hidden p-2 sm:aspect-[16/10]">
-          {demoVideo ? (
-            <HeroVideo src="/demo/demo.mp4" poster="/hero/clip-b.jpg" className="h-full w-full rounded-[22px] object-cover" />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center rounded-[22px] bg-gradient-to-br from-teal-800/90 to-ink text-center text-teal-50">
-              <IconBrandYoutube size={40} stroke={1.5} className="text-marigold" aria-hidden="true" />
-              <p className="mt-3 text-lg font-semibold">Watch the 2-minute walkthrough</p>
-              <p className="text-sm text-teal-100/80">Demo video coming up</p>
-            </div>
-          )}
+        <div className="reveal surface mx-auto mt-16 aspect-[4/5] w-full max-w-[480px] overflow-hidden p-2">
+          <DemoVideo src="/demo/demo.mp4" poster="/demo/demo.jpg" />
         </div>
       </section>
 
