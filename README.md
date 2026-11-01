@@ -108,8 +108,7 @@ You need a Supabase project (run `supabase/schema.sql`, turn on Google sign-in),
 ## Team
 
 - **Rounak Bisht**: product and build · [GitHub](https://github.com/RounakBisht) · [LinkedIn](https://www.linkedin.com/in/rounak-bisht-/)
-- **Kartik Manral** · [GitHub](https://github.com/KartikManral) · [LinkedIn](https://www.linkedin.com/in/kartik-manral-b08383249/)
-
+- **Kartik Manral**: co-builder, set up Supabase and Google sign-in · [GitHub](https://github.com/KartikManral) · [LinkedIn](https://www.linkedin.com/in/kartik-manral-b08383249/)
 ### Who built what
 
 **Rounak Bisht**
