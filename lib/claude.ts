@@ -11,19 +11,27 @@ export class ClaudeError extends Error {
   }
 }
 
-async function callClaude(system: string, user: string, maxTokens: number): Promise<string> {
+type Block = { type: string; text?: string; input?: unknown };
+
+// When a schema is given, Claude must answer through a tool call, so the reply is always structured JSON.
+async function callClaude(system: string, user: string, maxTokens: number, schema?: object): Promise<Block[]> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new ClaudeError("ANTHROPIC_API_KEY is not set in Vercel.", 500);
   let lastErr = "";
   for (const model of MODELS) {
+    const payload: Record<string, unknown> = { model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] };
+    if (schema) {
+      payload.tools = [{ name: "respond", description: "Return the answer in the requested JSON shape.", input_schema: schema }];
+      payload.tool_choice = { type: "tool", name: "respond" };
+    }
     const res = await fetch(`${process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"}/v1/messages`, {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
-      const json = (await res.json()) as { content?: { type: string; text?: string }[] };
-      return (json.content || []).map((c) => c.text || "").join("");
+      const json = (await res.json()) as { content?: Block[] };
+      return json.content || [];
     }
     const body = await res.text();
     lastErr = `${res.status} ${body.slice(0, 300)}`;
@@ -33,21 +41,31 @@ async function callClaude(system: string, user: string, maxTokens: number): Prom
   throw new ClaudeError(`Claude request failed: ${lastErr}`);
 }
 
-function extractJson(text: string): unknown {
+function extractJson(blocks: Block[]): unknown {
+  const tool = blocks.find((b) => b.type === "tool_use" && b.input && typeof b.input === "object");
+  if (tool && Object.keys(tool.input as object).length) return tool.input;
+  const text = blocks.map((b) => b.text || "").join("");
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("No JSON in reply");
+  if (start < 0 || end <= start) throw new Error("no-json");
   return JSON.parse(text.slice(start, end + 1));
 }
 
-// Asks for JSON and retries once if the reply doesn't parse.
-export async function claudeJson<T>(system: string, user: string, maxTokens = 2000): Promise<T> {
-  let text = await callClaude(system, user, maxTokens);
+const ANY_OBJECT = { type: "object", additionalProperties: true };
+
+// Asks for JSON (forced through a tool call) and retries once if the reply still doesn't parse.
+export async function claudeJson<T>(system: string, user: string, maxTokens = 2000, schema: object = ANY_OBJECT): Promise<T> {
   try {
-    return extractJson(text) as T;
-  } catch {
-    text = await callClaude(system, `${user}\n\nYour previous reply was not valid JSON. Reply with ONLY the JSON object, nothing else.`, maxTokens);
-    return extractJson(text) as T;
+    return extractJson(await callClaude(system, user, maxTokens, schema)) as T;
+  } catch (e) {
+    if (e instanceof ClaudeError) throw e;
+    try {
+      const again = await callClaude(system, `${user}\n\nReply with ONLY the JSON object described above, nothing else.`, maxTokens);
+      return extractJson(again) as T;
+    } catch (e2) {
+      if (e2 instanceof ClaudeError) throw e2;
+      throw new ClaudeError("The AI's reply came back in the wrong format. Please try again, or make the brief a little broader.", 502);
+    }
   }
 }
 
