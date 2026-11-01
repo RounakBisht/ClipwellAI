@@ -110,6 +110,22 @@ You need a Supabase project (run `supabase/schema.sql`, turn on Google sign-in),
 - **Rounak Bisht**: product and build · [GitHub](https://github.com/RounakBisht) · [LinkedIn](https://www.linkedin.com/in/rounak-bisht-/)
 - **Kartik Manral** · [GitHub](https://github.com/KartikManral) · [LinkedIn](https://www.linkedin.com/in/kartik-manral-b08383249/)
 
+### Who built what
+
+**Rounak Bisht**
+- **Problem and scope:** picked problem statement 01, made brand memory the differentiator and wrote the product brief.
+- **Brand memory (style cards):** fields, rules and versions, and how the card learns from edits and results.
+- **AI clip picks and copy:** Claude prompts for clips with a reason and score, and Reels and Shorts copy in the brand's voice and language.
+- **Media pipeline:** in-browser audio extraction, Hinglish transcription with Groq Whisper, and 9:16 export with burned-in captions.
+- **Studio UX:** the upload flow, clip editor (trim, framing, caption preview) and copy panel.
+- **Feedback loop:** Great / OK / Poor results feeding the style card, and the Suggestions panel.
+
+**Kartik Manral**
+- **Auth and database:** Supabase setup, Google sign-in, database schema and row-level security.
+- **Content calendar:** the 7-day posting plan and CSV export for Google Sheets.
+- **Visual identity and homepage:** logo, palette, hero and the mobile layout.
+- **Launch:** GitHub and Vercel setup, deployment and going live.
+
 Built with [Claude Code](https://claude.com/claude-code) as our coding partner; it is credited as co-author on the commits.
 
 ## License
