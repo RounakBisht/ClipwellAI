@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IconVolume, IconVolumeOff } from "@tabler/icons-react";
 
-export default function DemoVideo({ src, poster }: { src: string; poster: string }) {
+export default function DemoVideo({ src, poster, describedBy }: { src: string; poster: string; describedBy?: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function DemoVideo({ src, poster }: { src: string; poster: string
   }
   return (
     <div className="relative h-full w-full">
-      <video ref={ref} aria-label="ClipwellAI 30-second product demo" className="h-full w-full rounded-[22px] bg-ink object-cover" src={src} poster={poster} muted loop playsInline preload="metadata" />
+      <video ref={ref} aria-label="ClipwellAI 30-second product demo" aria-describedby={describedBy} className="h-full w-full rounded-[22px] bg-ink object-cover" src={src} poster={poster} muted loop playsInline preload="metadata" />
       <button
         onClick={toggle}
         aria-label={muted ? "Turn sound on" : "Mute"}

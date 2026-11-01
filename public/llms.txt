@@ -1,0 +1,51 @@
+# ClipwellAI
+
+> A content repurposing studio with brand memory. ClipwellAI turns long videos and podcasts into captioned 9:16 Shorts and Reels. It picks the moments worth posting and gives a reason for each pick, writes platform copy in the brand's voice, and learns that voice from every edit and every posting result.
+
+Built for Problem Statement 01, "Content Repurposing Studio with Brand Memory", at the Product Space x Wispr Flow AI Hackathon (31 October 2026) by Rounak Bisht and Kartik Manral. Built by voice with Wispr Flow.
+
+## Try it
+
+- [Live app](https://clipwellai.vercel.app): sign in with Google to open the studio.
+- [30-second demo video](https://clipwellai.vercel.app/#how): on the homepage, with a written description of every scene underneath it.
+
+## The workflow
+
+1. **Long video in.** Upload a video file (up to 4 hours, MP4 works best) or paste a YouTube link. YouTube links use the video's captions; if YouTube blocks the request, the transcript can be pasted from YouTube's "Show transcript" panel. Transcript languages: English, Hindi (Devanagari), Hinglish (Roman script) or auto-detect. For uploads, the audio is extracted in the browser and only the audio is sent for transcription, which returns word-level timings. The video file never leaves the user's computer.
+2. **Brief to clip picks.** The user describes what they want, typed or spoken with Wispr Flow. The AI returns 3 to 5 clips, each with a title, an opening hook, a score out of 100 and a plain-language reason for the pick.
+3. **Edit and export.** Adjust the start and end of each clip, choose framing (centre, left, right, or split to keep two speakers on screen) and the caption look, then export a 9:16 MP4 (720x1280) with word-by-word captions burned in. Rendering happens in the browser.
+4. **Copy per platform.** An Instagram Reels caption and a YouTube Shorts title and description, with hashtags, written in the brand's tone and language (for example Hinglish).
+5. **Brand memory.** Copy can be changed with a plain-language instruction such as "too salesy, drop the emojis, max two hashtags". Ticking "Make this a rule" saves the instruction to the brand's style card, so every future clip and copy follows it.
+6. **Content calendar.** Plans the next 7 days of posts from the clips, with posting times per platform, and exports the plan as a CSV for Google Sheets.
+7. **Performance feedback loop.** After posting, the user marks each clip Great, OK or Poor. What worked and what flopped is written back to the style card and shapes the next picks. A Suggestions panel checks clip picks, length and pacing, captions and framing, brand voice and posting cadence.
+
+## Style cards (how brand memory works)
+
+- Each brand has a style card: tone, hook style, emoji and hashtag rules, language, caption look, learned rules and learnings from results.
+- Rules can apply to all platforms, only Shorts or only Reels.
+- Every change creates a new version (v1, v2, v3...) with a change note, and the full history is visible. Learned rules can be switched off at any time.
+- Copy edits are versioned too, and any edit can be undone.
+- A user can keep several brands, set one as the default and pick which style card each project uses.
+
+## Privacy and data
+
+- Uploaded videos stay in the browser; only the audio is sent for transcription.
+- Projects, clips, copy, calendars and style cards are stored per user in Supabase with row-level security, so each user only sees their own data.
+
+## Tech
+
+- Next.js 15 on Vercel
+- Supabase: Google sign-in and Postgres
+- Anthropic Claude: clip picks, copy, edits and style-card learning
+- Groq Whisper large-v3-turbo: transcription
+- ffmpeg.wasm: audio extraction and MP4 export in the browser
+
+## Team
+
+- [Rounak Bisht](https://www.linkedin.com/in/rounak-bisht-/)
+- [Kartik Manral](https://www.linkedin.com/in/kartik-manral-b08383249/)
+
+## Pages
+
+- [Homepage](https://clipwellai.vercel.app/): product overview and demo video
+- [Studio](https://clipwellai.vercel.app/studio): the app itself, after Google sign-in

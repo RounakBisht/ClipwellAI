@@ -8,6 +8,17 @@ import { IconTrophy, IconBrandYoutube, IconBrandLinkedin, IconChartArrowsVertica
 import { createClient } from "@/lib/supabase/server";
 import VisitorCount from "@/components/VisitorCount";
 
+// Text version of the homepage demo video, for screen readers, AI agents and anyone who can't play it.
+const DEMO_SCENES = [
+  { title: "Long video in", body: "A long podcast is dropped in (a YouTube link works too) and transcribed with word-level timings." },
+  { title: "Clip picks with reasons", body: "A spoken brief goes in, and the AI picks the best clips, scores each one and explains why it picked it." },
+  { title: "Captions", body: "Word-by-word captions are burned into a real 9:16 MP4, rendered right in the browser." },
+  { title: "Copy per platform", body: "Instagram Reels and YouTube Shorts copy is written in the brand's voice, here in Hinglish." },
+  { title: "Brand voice memory", body: "One spoken edit (\u201ctoo salesy, drop the emojis, max two hashtags\u201d) rewrites the copy and, saved as a rule, updates the style card from v2 to v3 so every future clip follows it." },
+  { title: "Content calendar", body: "The next 7 days of posts are planned from the clips and exported to Google Sheets." },
+  { title: "Learns from what performed", body: "Each post is marked Great, OK or Poor, and the suggestions panel and style card learn from the results." },
+];
+
 export default async function Home({
   searchParams,
 }: {
@@ -138,8 +149,20 @@ export default async function Home({
           ))}
         </ol>
         <div className="reveal surface mx-auto mt-16 aspect-[4/5] w-full max-w-[480px] overflow-hidden p-2">
-          <DemoVideo src="/demo/demo.mp4" poster="/demo/demo.jpg" />
+          <DemoVideo src="/demo/demo.mp4" poster="/demo/demo.jpg" describedBy="demo-description" />
         </div>
+        <details className="group mx-auto mt-4 w-full max-w-[480px] text-left">
+          <summary className="mx-auto w-fit cursor-pointer list-none rounded-full px-3 py-1 text-sm font-semibold text-teal-800 hover:bg-teal-50 [&::-webkit-details-marker]:hidden">
+            What the video shows <span className="inline-block transition group-open:rotate-180" aria-hidden="true">▾</span>
+          </summary>
+          <ol id="demo-description" className="mt-3 list-decimal space-y-2 rounded-2xl bg-white/70 py-4 pr-5 pl-9 text-sm leading-relaxed text-stone-700 marker:font-semibold marker:text-teal-700">
+            {DEMO_SCENES.map((s) => (
+              <li key={s.title}>
+                <span className="font-semibold text-ink">{s.title}.</span> {s.body}
+              </li>
+            ))}
+          </ol>
+        </details>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
